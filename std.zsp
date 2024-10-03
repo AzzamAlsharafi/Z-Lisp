@@ -1,0 +1,141 @@
+; Atoms
+(def {nil} {})
+(def {true} 1)
+(def {false} 0)
+
+; Function Definitions
+(def {func} (fun {f b} {
+  def (head f) (fun (tail f) b)
+}))
+
+; Unpack List for Function
+(func {unpack f l} {
+  eval (join (list f) l)
+})
+
+; Pack List for Function
+(func {pack f & xs} {f xs})
+
+; First, Second, or Third Item in List
+(func {fst l} { eval (head l) })
+(func {snd l} { eval (head (tail l)) })
+(func {trd l} { eval (head (tail (tail l))) })
+
+; Nth item in List
+(func {nth n l} {
+  if (== n 0)
+    {fst l}
+    {nth (- n 1) (tail l)}
+})
+
+; Last item in List
+(func {last l} {nth (- (len l) 1) l})
+
+; Perform Several things in Sequence
+(func {do & l} {
+  if (== l nil)
+    {nil}
+    {last l}
+})
+
+; Open new scope
+(func {let b} {
+  ((fun {_} b) ())
+})
+
+; Logical Functions
+(func {not x}   {- 1 x})
+(func {or x y}  {+ x y})
+(func {and x y} {* x y})
+
+; Take N items
+(func {take n l} {
+  if (== n 0)
+    {nil}
+    {join (head l) (take (- n 1) (tail l))}
+})
+
+; Drop N items
+(func {drop n l} {
+  if (== n 0)
+    {l}
+    {drop (- n 1) (tail l)}
+})
+
+; Split at N
+(func {split n l} {list (take n l) (drop n l)})
+
+; Element of List
+(func {elem x l} {
+  if (== l nil)
+    {false}
+    {if (== x (fst l)) {true} {elem x (tail l)}}
+})
+
+; Apply Function to List
+(func {map f l} {
+  if (== l nil)
+    {nil}
+    {join (list (f (fst l))) (map f (tail l))}
+})
+
+; Apply Filter to List
+(func {filter f l} {
+  if (== l nil)
+    {nil}
+    {join (if (f (fst l)) {head l} {nil}) (filter f (tail l))}
+})
+
+; Fold Left
+(func {foldl f z l} {
+  if (== l nil)
+    {z}
+    {foldl f (f z (fst l)) (tail l)}
+})
+
+(func {sum l} {foldl + 0 l})
+(func {product l} {foldl * 1 l})
+
+; switch (conditions)
+(func {select & cs} {
+  if (== cs nil)
+    {error "No Selection Found"}
+    {if (fst (fst cs)) {snd (fst cs)} {unpack select (tail cs)}}
+})
+
+; Example
+; (func {month-day-suffix i} {
+;   select
+;     {(== i 0)  "st"}
+;     {(== i 1)  "nd"}
+;     {(== i 3)  "rd"}
+;     {true "th"}
+; })
+
+; switch (values)
+(func {case x & cs} {
+  if (== cs nil)
+    {error "No Case Found"}
+    {if (== x (fst (fst cs))) {snd (fst cs)} {
+      unpack case (join (list x) (tail cs))}}
+})
+
+; Example
+; (func {day-name x} {
+;   case x
+;     {0 "Monday"}
+;     {1 "Tuesday"}
+;     {2 "Wednesday"}
+;     {3 "Thursday"}
+;     {4 "Friday"}
+;     {5 "Saturday"}
+;     {6 "Sunday"}
+; })
+
+; Fibonacci
+(func {fib n} {
+  select
+    { (== n 0) 0 }
+    { (== n 1) 1 }
+    { true (+ (fib (- n 1)) (fib (- n 2))) }
+})
