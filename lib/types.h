@@ -13,37 +13,49 @@ typedef enum
 } val_t;
 
 struct val;
+union val_data;
 struct env;
 typedef struct val val;
+typedef union val_data val_data;
 typedef struct env env;
 
 typedef val *(*builtin)(env *, val *);
+
+union val_data
+{
+    double num;
+    
+    char *str;
+
+    struct
+    {
+        builtin blt;
+        env *env;
+        val *header;
+        val *body;
+    } fun;
+    
+    struct
+    {
+        int count;
+        val **list;
+    } exp;
+};
 
 struct val
 {
     val_t type;
 
-    double num;
-    char *err;
-    char *sym;
-    char *str;
-
-    builtin blt;
-    env *env;
-    val *header;
-    val *body;
-
-    int count;
-    struct val **list;
+    val_data d;
 };
 
 struct env
 {
-    struct env *parent;
+    env *parent;
 
     int count;
     char **keys;
-    struct val **vals;
+    val **vals;
 };
 
 // ---------- Constructors ----------

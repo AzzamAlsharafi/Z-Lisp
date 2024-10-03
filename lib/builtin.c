@@ -20,12 +20,12 @@ extern mpc_parser_t *Parser;
 // Return the first element of a List.
 val *b_head(env *e, val *v)
 {
-    ASSERT(v, v->count == 1, "Function 'head' recieved %i arguments. Expected 1 argument.", v->count)
-    ASSERT(v, v->list[0]->type == T_LST, "Function 'head' recieved '%s'. Expected List.", type_name(v->list[0]))
-    ASSERT(v, v->list[0]->count > 0, "Function 'head' recieved {}.")
+    ASSERT(v, v->d.exp.count == 1, "Function 'head' recieved %i arguments. Expected 1 argument.", v->d.exp.count)
+    ASSERT(v, v->d.exp.list[0]->type == T_LST, "Function 'head' recieved '%s'. Expected List.", type_name(v->d.exp.list[0]))
+    ASSERT(v, v->d.exp.list[0]->d.exp.count > 0, "Function 'head' recieved {}.")
 
     val *l = exp_take(v, 0);
-    while (l->count > 1)
+    while (l->d.exp.count > 1)
     {
         free_val(exp_pop(l, 1));
     }
@@ -35,9 +35,9 @@ val *b_head(env *e, val *v)
 // Return the tail (all elements except the first) of a List.
 val *b_tail(env *e, val *v)
 {
-    ASSERT(v, v->count == 1, "Function 'tail' recieved %i arguments. Expected 1 argument.", v->count)
-    ASSERT(v, v->list[0]->type == T_LST, "Function 'tail' recieved '%s'. Expected List.", type_name(v->list[0]))
-    ASSERT(v, v->list[0]->count > 0, "Function 'tail' recieved {}.")
+    ASSERT(v, v->d.exp.count == 1, "Function 'tail' recieved %i arguments. Expected 1 argument.", v->d.exp.count)
+    ASSERT(v, v->d.exp.list[0]->type == T_LST, "Function 'tail' recieved '%s'. Expected List.", type_name(v->d.exp.list[0]))
+    ASSERT(v, v->d.exp.list[0]->d.exp.count > 0, "Function 'tail' recieved {}.")
 
     val *l = exp_take(v, 0);
     free_val(exp_pop(l, 0));
@@ -54,8 +54,8 @@ val *b_list(env *e, val *v)
 // Evaluate the a List as an Expression.
 val *b_eval(env *e, val *v)
 {
-    ASSERT(v, v->count == 1, "Function 'eval' recieved %i arguments. Expected 1 argument.", v->count)
-    ASSERT(v, v->list[0]->type == T_LST, "Function 'eval' recieved '%s'. Expected List.", type_name(v->list[0]))
+    ASSERT(v, v->d.exp.count == 1, "Function 'eval' recieved %i arguments. Expected 1 argument.", v->d.exp.count)
+    ASSERT(v, v->d.exp.list[0]->type == T_LST, "Function 'eval' recieved '%s'. Expected List.", type_name(v->d.exp.list[0]))
 
     val *l = exp_take(v, 0);
     l->type = T_EXP;
@@ -65,14 +65,14 @@ val *b_eval(env *e, val *v)
 // Join two Lists.
 val *b_join(env *e, val *v)
 {
-    for (int i = 0; i < v->count; i++)
+    for (int i = 0; i < v->d.exp.count; i++)
     {
-        ASSERT(v, v->list[i]->type == T_LST, "Function 'join' argument %i is '%s'. Expected List.", i, type_name(v->list[i]));
+        ASSERT(v, v->d.exp.list[i]->type == T_LST, "Function 'join' argument %i is '%s'. Expected List.", i, type_name(v->d.exp.list[i]));
     }
 
     val *l = exp_pop(v, 0);
 
-    while (v->count)
+    while (v->d.exp.count)
     {
         l = exp_join(l, exp_pop(v, 0));
     }
@@ -84,11 +84,11 @@ val *b_join(env *e, val *v)
 // Return the length of a List.
 val *b_len(env *e, val *v)
 {
-    ASSERT(v, v->count == 1, "Function 'len' recieved %i arguments. Expected 1 argument.", v->count);
-    ASSERT(v, v->list[0]->type == T_LST, "Function 'len' recieved '%s'. Expected List.", type_name(v->list[0]));
+    ASSERT(v, v->d.exp.count == 1, "Function 'len' recieved %i arguments. Expected 1 argument.", v->d.exp.count);
+    ASSERT(v, v->d.exp.list[0]->type == T_LST, "Function 'len' recieved '%s'. Expected List.", type_name(v->d.exp.list[0]));
 
     val *l = exp_take(v, 0);
-    val *len = new_num(l->count);
+    val *len = new_num(l->d.exp.count);
     free_val(l);
     return len;
 }
@@ -97,31 +97,31 @@ val *b_len(env *e, val *v)
 // Accepts two operations: 'def' (global) and '=' (local).
 val *def_var(env *e, val *v, char *op)
 {
-    ASSERT(v, v->list[0]->type == T_LST, "Function '%s' recieved '%s'. Expected List.", op, type_name(v->list[0]));
+    ASSERT(v, v->d.exp.list[0]->type == T_LST, "Function '%s' recieved '%s'. Expected List.", op, type_name(v->d.exp.list[0]));
 
-    val *keys = v->list[0];
+    val *keys = v->d.exp.list[0];
 
-    for (int i = 0; i < keys->count; i++)
+    for (int i = 0; i < keys->d.exp.count; i++)
     {
-        ASSERT(v, keys->list[i]->type == T_SYM, "Function '%s' received '%s' at element %i. Expected Symbols only.", op, type_name(keys->list[i]), i);
+        ASSERT(v, keys->d.exp.list[i]->type == T_SYM, "Function '%s' received '%s' at element %i. Expected Symbols only.", op, type_name(keys->d.exp.list[i]), i);
 
-        int condition = strcmp(keys->list[i]->sym, "==") == 0 || strcmp(keys->list[i]->sym, "!=") == 0 || strcmp(keys->list[i]->sym, "error") == 0 || strcmp(keys->list[i]->sym, "print") == 0 || strcmp(keys->list[i]->sym, "load") == 0 || strcmp(keys->list[i]->sym, "if") == 0 || strcmp(keys->list[i]->sym, "==") == 0 || strcmp(keys->list[i]->sym, "<") == 0 || strcmp(keys->list[i]->sym, ">") == 0 || strcmp(keys->list[i]->sym, "len") == 0 || strcmp(keys->list[i]->sym, "+") == 0 || strcmp(keys->list[i]->sym, "-") == 0 || strcmp(keys->list[i]->sym, "*") == 0 || strcmp(keys->list[i]->sym, "/") == 0 || strcmp(keys->list[i]->sym, "%") == 0 || strcmp(keys->list[i]->sym, "^") == 0 || strcmp(keys->list[i]->sym, "min") == 0 || strcmp(keys->list[i]->sym, "max") == 0 || strcmp(keys->list[i]->sym, "def") == 0 || strcmp(keys->list[i]->sym, "env") == 0 || strcmp(keys->list[i]->sym, "list") == 0 || strcmp(keys->list[i]->sym, "join") == 0 || strcmp(keys->list[i]->sym, "head") == 0 || strcmp(keys->list[i]->sym, "tail") == 0 || strcmp(keys->list[i]->sym, "eval") == 0 || strcmp(keys->list[i]->sym, "exit") == 0 || strcmp(keys->list[i]->sym, "fun") == 0 || strcmp(keys->list[i]->sym, "=") == 0;
+        int condition = strcmp(keys->d.exp.list[i]->d.str, "==") == 0 || strcmp(keys->d.exp.list[i]->d.str, "!=") == 0 || strcmp(keys->d.exp.list[i]->d.str, "error") == 0 || strcmp(keys->d.exp.list[i]->d.str, "print") == 0 || strcmp(keys->d.exp.list[i]->d.str, "load") == 0 || strcmp(keys->d.exp.list[i]->d.str, "if") == 0 || strcmp(keys->d.exp.list[i]->d.str, "==") == 0 || strcmp(keys->d.exp.list[i]->d.str, "<") == 0 || strcmp(keys->d.exp.list[i]->d.str, ">") == 0 || strcmp(keys->d.exp.list[i]->d.str, "len") == 0 || strcmp(keys->d.exp.list[i]->d.str, "+") == 0 || strcmp(keys->d.exp.list[i]->d.str, "-") == 0 || strcmp(keys->d.exp.list[i]->d.str, "*") == 0 || strcmp(keys->d.exp.list[i]->d.str, "/") == 0 || strcmp(keys->d.exp.list[i]->d.str, "%") == 0 || strcmp(keys->d.exp.list[i]->d.str, "^") == 0 || strcmp(keys->d.exp.list[i]->d.str, "min") == 0 || strcmp(keys->d.exp.list[i]->d.str, "max") == 0 || strcmp(keys->d.exp.list[i]->d.str, "def") == 0 || strcmp(keys->d.exp.list[i]->d.str, "env") == 0 || strcmp(keys->d.exp.list[i]->d.str, "list") == 0 || strcmp(keys->d.exp.list[i]->d.str, "join") == 0 || strcmp(keys->d.exp.list[i]->d.str, "head") == 0 || strcmp(keys->d.exp.list[i]->d.str, "tail") == 0 || strcmp(keys->d.exp.list[i]->d.str, "eval") == 0 || strcmp(keys->d.exp.list[i]->d.str, "exit") == 0 || strcmp(keys->d.exp.list[i]->d.str, "fun") == 0 || strcmp(keys->d.exp.list[i]->d.str, "=") == 0;
 
-        ASSERT(v, !condition, "Function '%s' received forbidden symbol '%s'. This is a builtin symbol.", op, keys->list[i]->sym);
+        ASSERT(v, !condition, "Function '%s' received forbidden symbol '%s'. This is a builtin symbol.", op, keys->d.exp.list[i]->d.str);
     }
 
-    ASSERT(v, keys->count == v->count - 1, "Function '%s' received unmatching number of Symbols (%i) and values (%i).", op, keys->count, v->count - 1);
+    ASSERT(v, keys->d.exp.count == v->d.exp.count - 1, "Function '%s' received unmatching number of Symbols (%i) and values (%i).", op, keys->d.exp.count, v->d.exp.count - 1);
 
-    for (int i = 0; i < keys->count; i++)
+    for (int i = 0; i < keys->d.exp.count; i++)
     {
         if (strcmp(op, "def") == 0)
         {
-            env_set_global(e, keys->list[i], v->list[i + 1]);
+            env_set_global(e, keys->d.exp.list[i], v->d.exp.list[i + 1]);
         }
 
         if (strcmp(op, "=") == 0)
         {
-            env_set(e, keys->list[i], v->list[i + 1]);
+            env_set(e, keys->d.exp.list[i], v->d.exp.list[i + 1]);
         }
     }
 
@@ -144,8 +144,8 @@ val *b_put(env *e, val *v)
 // Return the environment as a List of key-value pairs.
 val *b_env(env *e, val *v)
 {
-    ASSERT(v, v->count == 1, "Function 'env' recieved %i arguments. Expected 1 arguments.", v->count);
-    ASSERT(v, v->list[0]->type == T_LST && v->list[0]->count == 0, "Function 'env' recieved '%s'. Expected {}.", type_name(v->list[0]));
+    ASSERT(v, v->d.exp.count == 1, "Function 'env' recieved %i arguments. Expected 1 arguments.", v->d.exp.count);
+    ASSERT(v, v->d.exp.list[0]->type == T_LST && v->d.exp.list[0]->d.exp.count == 0, "Function 'env' recieved '%s'. Expected {}.", type_name(v->d.exp.list[0]));
 
     val *l = new_lst();
 
@@ -165,8 +165,8 @@ val *b_env(env *e, val *v)
 // Exit the program.
 val *b_exit(env *e, val *v)
 {
-    ASSERT(v, v->count == 1, "Function 'exit' recieved %i arguments. Expected 1 arguments.", v->count);
-    ASSERT(v, v->list[0]->type == T_LST && v->list[0]->count == 0, "Function 'exit' recieved '%s'. Expected {}.", type_name(v->list[0]));
+    ASSERT(v, v->d.exp.count == 1, "Function 'exit' recieved %i arguments. Expected 1 arguments.", v->d.exp.count);
+    ASSERT(v, v->d.exp.list[0]->type == T_LST && v->d.exp.list[0]->d.exp.count == 0, "Function 'exit' recieved '%s'. Expected {}.", type_name(v->d.exp.list[0]));
 
     exit(EXIT_SUCCESS);
 }
@@ -174,17 +174,17 @@ val *b_exit(env *e, val *v)
 // Create a function. Accepts a List of Symbols as header, followed by a List as body.
 val *b_fun(env *e, val *v)
 {
-    ASSERT(v, v->count == 2, "Function 'fun' recieved %i arguments. Expected 2 arguments.", v->count);
+    ASSERT(v, v->d.exp.count == 2, "Function 'fun' recieved %i arguments. Expected 2 arguments.", v->d.exp.count);
 
-    for (int i = 0; i < v->count; i++)
+    for (int i = 0; i < v->d.exp.count; i++)
     {
-        ASSERT(v, v->list[i]->type == T_LST, "Function 'fun' argument %i is '%s'. Expected List.", i, type_name(v->list[i]));
+        ASSERT(v, v->d.exp.list[i]->type == T_LST, "Function 'fun' argument %i is '%s'. Expected List.", i, type_name(v->d.exp.list[i]));
     }
 
-    for (int i = 0; i < v->list[0]->count; i++)
+    for (int i = 0; i < v->d.exp.list[0]->d.exp.count; i++)
     {
-        ASSERT(v, v->list[0]->list[i]->type == T_SYM, "Function header must contain Symbols only. Parameter %i is '%s'.",
-               i, type_name(v->list[0]->list[i]));
+        ASSERT(v, v->d.exp.list[0]->d.exp.list[i]->type == T_SYM, "Function header must contain Symbols only. Parameter %i is '%s'.",
+               i, type_name(v->d.exp.list[0]->d.exp.list[i]));
     }
 
     val *header = exp_pop(v, 0);
@@ -197,34 +197,34 @@ val *b_fun(env *e, val *v)
 // If statement. Accepts a Number, and two Lists. Evaluate first if Number is true, otherwise evaluate second.
 val *b_if(env *e, val *v)
 {
-    ASSERT(v, v->count == 3, "Function 'if' recieved %i arguments. Expected 3 arguments.", v->count);
-    ASSERT(v, v->list[0]->type == T_NUM, "Function 'if' argument %i is '%s'. Expected Number.", 0, type_name(v->list[0]));
-    ASSERT(v, v->list[1]->type == T_LST, "Function 'if' argument %i is '%s'. Expected List.", 1, type_name(v->list[0]));
-    ASSERT(v, v->list[2]->type == T_LST, "Function 'if' argument %i is '%s'. Expected List.", 2, type_name(v->list[0]));
+    ASSERT(v, v->d.exp.count == 3, "Function 'if' recieved %i arguments. Expected 3 arguments.", v->d.exp.count);
+    ASSERT(v, v->d.exp.list[0]->type == T_NUM, "Function 'if' argument %i is '%s'. Expected Number.", 0, type_name(v->d.exp.list[0]));
+    ASSERT(v, v->d.exp.list[1]->type == T_LST, "Function 'if' argument %i is '%s'. Expected List.", 1, type_name(v->d.exp.list[0]));
+    ASSERT(v, v->d.exp.list[2]->type == T_LST, "Function 'if' argument %i is '%s'. Expected List.", 2, type_name(v->d.exp.list[0]));
 
-    if (v->list[0]->num)
+    if (v->d.exp.list[0]->d.num)
     {
-        return b_eval(e, exp_add(new_lst(), v->list[1]));
+        return b_eval(e, exp_add(new_lst(), v->d.exp.list[1]));
     }
     else
     {
-        return b_eval(e, exp_add(new_lst(), v->list[2]));
+        return b_eval(e, exp_add(new_lst(), v->d.exp.list[2]));
     }
 }
 
 // Load/run a Z-Lisp file. Accepts a String as a file name. Returns () or Error if failed.
 val *b_load(env *e, val *v)
 {
-    ASSERT(v, v->count == 1, "Function 'load' recieved %i arguments. Expected 1 argument.", v->count);
-    ASSERT(v, v->list[0]->type == T_STR, "Function 'load' argument %i is '%s'. Expected String.", 0, type_name(v->list[0]));
+    ASSERT(v, v->d.exp.count == 1, "Function 'load' recieved %i arguments. Expected 1 argument.", v->d.exp.count);
+    ASSERT(v, v->d.exp.list[0]->type == T_STR, "Function 'load' argument %i is '%s'. Expected String.", 0, type_name(v->d.exp.list[0]));
 
     mpc_result_t r;
-    if (mpc_parse_contents(v->list[0]->str, Parser, &r))
+    if (mpc_parse_contents(v->d.exp.list[0]->d.str, Parser, &r))
     {
         val *exp = parse_node(r.output);
         mpc_ast_delete(r.output);
 
-        while (exp->count)
+        while (exp->d.exp.count)
         {
             val *x = eval(e, exp_pop(exp, 0));
 
@@ -257,9 +257,9 @@ val *b_load(env *e, val *v)
 // Print arguments separated by a space, followed by a newline to stdout.
 val *b_print(env *e, val *v)
 {
-    for (int i = 0; i < v->count; i++)
+    for (int i = 0; i < v->d.exp.count; i++)
     {
-        print_val(v->list[i]);
+        print_val(v->d.exp.list[i]);
         putchar(' ');
     }
 
@@ -272,10 +272,10 @@ val *b_print(env *e, val *v)
 // Throw an error. Accepts a String as an error message.
 val *b_error(env *e, val *v)
 {
-    ASSERT(v, v->count == 1, "Function 'error' recieved %i arguments. Expected 1 argument.", v->count);
-    ASSERT(v, v->list[0]->type == T_STR, "Function 'error' argument %i is '%s'. Expected String.", 0, type_name(v->list[0]));
+    ASSERT(v, v->d.exp.count == 1, "Function 'error' recieved %i arguments. Expected 1 argument.", v->d.exp.count);
+    ASSERT(v, v->d.exp.list[0]->type == T_STR, "Function 'error' argument %i is '%s'. Expected String.", 0, type_name(v->d.exp.list[0]));
 
-    val *err = new_err(v->list[0]->str);
+    val *err = new_err(v->d.exp.list[0]->d.str);
 
     free_val(v);
     return err;
@@ -285,16 +285,16 @@ val *b_error(env *e, val *v)
 // Accepts two operations: '==' and '!='.
 val *compare(env *e, val *v, char *op)
 {
-    ASSERT(v, v->count == 2, "Function '%s' recieved %i arguments. Expected 2 argument.", op, v->count);
+    ASSERT(v, v->d.exp.count == 2, "Function '%s' recieved %i arguments. Expected 2 argument.", op, v->d.exp.count);
 
     int r;
     if (strcmp(op, "==") == 0)
     {
-        r = val_eq(v->list[0], v->list[1]);
+        r = val_eq(v->d.exp.list[0], v->d.exp.list[1]);
     }
     if (strcmp(op, "!=") == 0)
     {
-        r = !val_eq(v->list[0], v->list[1]);
+        r = !val_eq(v->d.exp.list[0], v->d.exp.list[1]);
     }
     free_val(v);
     return new_num(r);
@@ -316,11 +316,11 @@ val *b_neq(env *e, val *v)
 // Accepts operations: '+', '-', '*', '/', '%', '^', 'min', 'max', '>', '<'.
 val *operation(env *e, val *v, char *op)
 {
-    for (int i = 0; i < v->count; i++)
+    for (int i = 0; i < v->d.exp.count; i++)
     {
-        if (v->list[i]->type != T_NUM)
+        if (v->d.exp.list[i]->type != T_NUM)
         {
-            val *err = new_err("Operator '%s' received incorrect arguments. Arguement %i is a '%s'.", op, i, type_name(v->list[i]));
+            val *err = new_err("Operator '%s' received incorrect arguments. Arguement %i is a '%s'.", op, i, type_name(v->d.exp.list[i]));
             free_val(v);
             return err;
         }
@@ -329,61 +329,61 @@ val *operation(env *e, val *v, char *op)
     val *x = exp_pop(v, 0);
 
     // Special case for unary minus
-    if (strcmp(op, "-") == 0 && v->count == 0)
+    if (strcmp(op, "-") == 0 && v->d.exp.count == 0)
     {
-        x->num = -x->num;
+        x->d.num = -x->d.num;
     }
 
-    while (v->count > 0)
+    while (v->d.exp.count > 0)
     {
         val *y = exp_pop(v, 0);
 
         if (strcmp(op, "+") == 0)
         {
-            x->num += y->num;
+            x->d.num += y->d.num;
         }
         else if (strcmp(op, "-") == 0)
         {
-            x->num -= y->num;
+            x->d.num -= y->d.num;
         }
         else if (strcmp(op, "*") == 0)
         {
-            x->num *= y->num;
+            x->d.num *= y->d.num;
         }
         else if (strcmp(op, "/") == 0)
         {
-            if (y->num == 0)
+            if (y->d.num == 0)
             {
                 free_val(x);
                 free_val(y);
                 x = new_err("Division By Zero.");
                 break;
             }
-            x->num /= y->num;
+            x->d.num /= y->d.num;
         }
         else if (strcmp(op, "%") == 0)
         {
-            x->num = fmod(x->num, y->num);
+            x->d.num = fmod(x->d.num, y->d.num);
         }
         else if (strcmp(op, "^") == 0)
         {
-            x->num = pow(x->num, y->num);
+            x->d.num = pow(x->d.num, y->d.num);
         }
         else if (strcmp(op, "min") == 0)
         {
-            x->num = x->num < y->num ? x->num : y->num;
+            x->d.num = x->d.num < y->d.num ? x->d.num : y->d.num;
         }
         else if (strcmp(op, "max") == 0)
         {
-            x->num = x->num > y->num ? x->num : y->num;
+            x->d.num = x->d.num > y->d.num ? x->d.num : y->d.num;
         }
         else if (strcmp(op, ">") == 0)
         {
-            x->num = x->num > y->num;
+            x->d.num = x->d.num > y->d.num;
         }
         else if (strcmp(op, "<") == 0)
         {
-            x->num = x->num < y->num;
+            x->d.num = x->d.num < y->d.num;
         }
 
         free_val(y);

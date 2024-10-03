@@ -13,7 +13,7 @@
 val *new_num(double n)
 {
     val *v = malloc(sizeof(val));
-    *v = (val){.type = T_NUM, .num = n};
+    *v = (val){.type = T_NUM, .d.num = n};
     return v;
 }
 
@@ -24,10 +24,10 @@ val *new_err(char *format, ...)
     va_start(list, format);
 
     val *v = malloc(sizeof(val));
-    *v = (val){.type = T_ERR, .err = malloc(512)};
+    *v = (val){.type = T_ERR, .d.str = malloc(512)};
 
-    vsnprintf(v->err, 511, format, list);
-    v->err = realloc(v->err, strlen(v->err) + 1);
+    vsnprintf(v->d.str, 511, format, list);
+    v->d.str = realloc(v->d.str, strlen(v->d.str) + 1);
 
     va_end(list);
 
@@ -37,23 +37,23 @@ val *new_err(char *format, ...)
 val *new_sym(char *s)
 {
     val *v = malloc(sizeof(val));
-    *v = (val){.type = T_SYM, .sym = malloc(strlen(s) + 1)};
-    strcpy(v->sym, s);
+    *v = (val){.type = T_SYM, .d.str = malloc(strlen(s) + 1)};
+    strcpy(v->d.str, s);
     return v;
 }
 
 val *new_str(char *s)
 {
     val *v = malloc(sizeof(val));
-    *v = (val){.type = T_STR, .str = malloc(strlen(s) + 1)};
-    strcpy(v->str, s);
+    *v = (val){.type = T_STR, .d.str = malloc(strlen(s) + 1)};
+    strcpy(v->d.str, s);
     return v;
 }
 
 val *new_exp(void)
 {
     val *v = malloc(sizeof(val));
-    *v = (val){.type = T_EXP, .count = 0, .list = NULL};
+    *v = (val){.type = T_EXP, .d.exp.count = 0, .d.exp.list = NULL};
     return v;
 }
 
@@ -67,7 +67,7 @@ val *new_lst(void)
 val *new_builtin_fun(builtin blt)
 {
     val *v = malloc(sizeof(val));
-    *v = (val){.type = T_FUN, .blt = blt};
+    *v = (val){.type = T_FUN, .d.fun.blt = blt};
     return v;
 }
 
@@ -75,7 +75,7 @@ val *new_fun(val *header, val *body)
 {
     val *v = malloc(sizeof(val));
     env *e = new_env();
-    *v = (val){.type = T_FUN, .blt = NULL, .env = e, .header = header, .body = body};
+    *v = (val){.type = T_FUN, .d.fun.blt = NULL, .d.fun.env = e, .d.fun.header = header, .d.fun.body = body};
     return v;
 }
 
@@ -102,32 +102,32 @@ void free_val(val *v)
         break;
 
     case T_FUN:
-        if (!v->blt)
+        if (!v->d.fun.blt)
         {
-            free_val(v->header);
-            free_val(v->body);
-            free_env(v->env);
+            free_val(v->d.fun.header);
+            free_val(v->d.fun.body);
+            free_env(v->d.fun.env);
         }
         break;
 
     case T_ERR:
-        free(v->err);
+        free(v->d.str);
         break;
     case T_SYM:
-        free(v->sym);
+        free(v->d.str);
         break;
 
     case T_STR:
-        free(v->str);
+        free(v->d.str);
         break;
 
     case T_EXP:
     case T_LST:
-        for (int i = 0; i < v->count; i++)
+        for (int i = 0; i < v->d.exp.count; i++)
         {
-            free_val(v->list[i]);
+            free_val(v->d.exp.list[i]);
         }
-        free(v->list);
+        free(v->d.exp.list);
         break;
     }
 
@@ -156,44 +156,44 @@ val *copy_val(val *v)
     switch (v->type)
     {
     case T_NUM:
-        c->num = v->num;
+        c->d.num = v->d.num;
         break;
 
     case T_FUN:
-        if (v->blt)
+        if (v->d.fun.blt)
         {
-            c->blt = v->blt;
+            c->d.fun.blt = v->d.fun.blt;
         }
         else
         {
-            c->blt = NULL;
-            c->env = copy_env(v->env);
-            c->header = copy_val(v->header);
-            c->body = copy_val(v->body);
+            c->d.fun.blt = NULL;
+            c->d.fun.env = copy_env(v->d.fun.env);
+            c->d.fun.header = copy_val(v->d.fun.header);
+            c->d.fun.body = copy_val(v->d.fun.body);
         }
         break;
 
     case T_ERR:
-        c->err = malloc(strlen(v->err) + 1);
-        strcpy(c->err, v->err);
+        c->d.str = malloc(strlen(v->d.str) + 1);
+        strcpy(c->d.str, v->d.str);
         break;
 
     case T_SYM:
-        c->sym = malloc(strlen(v->sym) + 1);
-        strcpy(c->sym, v->sym);
+        c->d.str = malloc(strlen(v->d.str) + 1);
+        strcpy(c->d.str, v->d.str);
         break;
     case T_STR:
-        c->str = malloc(strlen(v->str) + 1);
-        strcpy(c->str, v->str);
+        c->d.str = malloc(strlen(v->d.str) + 1);
+        strcpy(c->d.str, v->d.str);
         break;
 
     case T_EXP:
     case T_LST:
-        c->count = v->count;
-        c->list = malloc(sizeof(val *) * c->count);
-        for (int i = 0; i < c->count; i++)
+        c->d.exp.count = v->d.exp.count;
+        c->d.exp.list = malloc(sizeof(val *) * c->d.exp.count);
+        for (int i = 0; i < c->d.exp.count; i++)
         {
-            c->list[i] = copy_val(v->list[i]);
+            c->d.exp.list[i] = copy_val(v->d.exp.list[i]);
         }
         break;
     }
@@ -227,34 +227,34 @@ int val_eq(val *x, val *y)
     switch (x->type)
     {
     case T_NUM:
-        return (x->num == y->num);
+        return (x->d.num == y->d.num);
 
     case T_ERR:
-        return (strcmp(x->err, y->err) == 0);
+        return (strcmp(x->d.str, y->d.str) == 0);
     case T_SYM:
-        return (strcmp(x->sym, y->sym) == 0);
+        return (strcmp(x->d.str, y->d.str) == 0);
     case T_STR:
-        return (strcmp(x->str, y->str) == 0);
+        return (strcmp(x->d.str, y->d.str) == 0);
 
     case T_FUN:
-        if (x->blt || y->blt)
+        if (x->d.fun.blt || y->d.fun.blt)
         {
-            return x->blt == y->blt;
+            return x->d.fun.blt == y->d.fun.blt;
         }
         else
         {
-            return val_eq(x->header, y->header) && val_eq(x->body, y->body);
+            return val_eq(x->d.fun.header, y->d.fun.header) && val_eq(x->d.fun.body, y->d.fun.body);
         }
 
     case T_LST:
     case T_EXP:
-        if (x->count != y->count)
+        if (x->d.exp.count != y->d.exp.count)
         {
             return 0;
         }
-        for (int i = 0; i < x->count; i++)
+        for (int i = 0; i < x->d.exp.count; i++)
         {
-            if (!val_eq(x->list[i], y->list[i]))
+            if (!val_eq(x->d.exp.list[i], y->d.exp.list[i]))
             {
                 return 0;
             }
@@ -271,7 +271,7 @@ val *env_get(env *e, val *key)
 {
     for (int i = 0; i < e->count; i++)
     {
-        if (strcmp(e->keys[i], key->sym) == 0)
+        if (strcmp(e->keys[i], key->d.str) == 0)
         {
             return copy_val(e->vals[i]);
         }
@@ -283,7 +283,7 @@ val *env_get(env *e, val *key)
     }
     else
     {
-        return new_err("Unknown symbol '%s'.", key->sym);
+        return new_err("Unknown symbol '%s'.", key->d.str);
     }
 }
 
@@ -291,7 +291,7 @@ void env_set(env *e, val *key, val *v)
 {
     for (int i = 0; i < e->count; i++)
     {
-        if (strcmp(e->keys[i], key->sym) == 0)
+        if (strcmp(e->keys[i], key->d.str) == 0)
         {
             free_val(e->vals[i]);
             e->vals[i] = copy_val(v);
@@ -303,8 +303,8 @@ void env_set(env *e, val *key, val *v)
     e->keys = realloc(e->keys, e->count * sizeof(char *));
     e->vals = realloc(e->vals, e->count * sizeof(val *));
 
-    e->keys[e->count - 1] = malloc(strlen(key->sym) + 1);
-    strcpy(e->keys[e->count - 1], key->sym);
+    e->keys[e->count - 1] = malloc(strlen(key->d.str) + 1);
+    strcpy(e->keys[e->count - 1], key->d.str);
 
     e->vals[e->count - 1] = copy_val(v);
 }
@@ -326,13 +326,13 @@ void print_val(val *v)
     switch (v->type)
     {
     case T_NUM:
-        printf("%f", v->num);
+        printf("%f", v->d.num);
         break;
     case T_ERR:
-        printf("Error: %s", v->err);
+        printf("Error: %s", v->d.str);
         break;
     case T_SYM:
-        printf("%s", v->sym);
+        printf("%s", v->d.str);
         break;
     case T_STR:
         print_str(v);
@@ -344,16 +344,16 @@ void print_val(val *v)
         print_exp(v, '{', '}');
         break;
     case T_FUN:
-        if (v->blt)
+        if (v->d.fun.blt)
         {
-            printf("<%s>", builtin_name(v->blt));
+            printf("<%s>", builtin_name(v->d.fun.blt));
         }
         else
         {
             printf("(fun ");
-            print_val(v->header);
+            print_val(v->d.fun.header);
             putchar(' ');
-            print_val(v->body);
+            print_val(v->d.fun.body);
             putchar(')');
         }
         break;
@@ -362,8 +362,8 @@ void print_val(val *v)
 
 void print_str(val *v)
 {
-    char *escaped = malloc(strlen(v->str) + 1);
-    strcpy(escaped, v->str);
+    char *escaped = malloc(strlen(v->d.str) + 1);
+    strcpy(escaped, v->d.str);
 
     escaped = mpcf_escape(escaped);
 
@@ -375,11 +375,11 @@ void print_str(val *v)
 void print_exp(val *v, char start, char end)
 {
     putchar(start);
-    for (int i = 0; i < v->count; i++)
+    for (int i = 0; i < v->d.exp.count; i++)
     {
-        print_val(v->list[i]);
+        print_val(v->d.exp.list[i]);
 
-        if (i != (v->count - 1))
+        if (i != (v->d.exp.count - 1))
         {
             putchar(' ');
         }
@@ -423,21 +423,21 @@ char *type_name(val *v)
 
 val *exp_add(val *v, val *child)
 {
-    v->count++;
-    v->list = realloc(v->list, sizeof(val *) * v->count);
-    v->list[v->count - 1] = child;
+    v->d.exp.count++;
+    v->d.exp.list = realloc(v->d.exp.list, sizeof(val *) * v->d.exp.count);
+    v->d.exp.list[v->d.exp.count - 1] = child;
     return v;
 }
 
 val *exp_pop(val *v, int i)
 {
-    val *x = v->list[i];
+    val *x = v->d.exp.list[i];
 
-    memmove(&v->list[i], &v->list[i + 1], sizeof(val *) * (v->count - i - 1));
+    memmove(&v->d.exp.list[i], &v->d.exp.list[i + 1], sizeof(val *) * (v->d.exp.count - i - 1));
 
-    v->count--;
+    v->d.exp.count--;
 
-    v->list = realloc(v->list, sizeof(val *) * v->count);
+    v->d.exp.list = realloc(v->d.exp.list, sizeof(val *) * v->d.exp.count);
 
     return x;
 }
@@ -453,7 +453,7 @@ val *exp_take(val *v, int i)
 
 val *exp_join(val *x, val *y)
 {
-    while (y->count)
+    while (y->d.exp.count)
     {
         exp_add(x, exp_pop(y, 0));
     }
@@ -467,41 +467,41 @@ val *exp_join(val *x, val *y)
 val *call(env *e, val *first, val *v)
 {
     // If builtin function, call it directly.
-    if (first->blt)
+    if (first->d.fun.blt)
     {
-        return first->blt(e, v);
+        return first->d.fun.blt(e, v);
     }
 
     // Number of arguments given, and number of function parameters.
-    int given = v->count;
-    int total = first->header->count;
+    int given = v->d.exp.count;
+    int total = first->d.fun.header->d.exp.count;
 
     // Consume arguments.
-    while (v->count)
+    while (v->d.exp.count)
     {
         // If arguments are more than parameters, throw error.
-        if (first->header->count == 0)
+        if (first->d.fun.header->d.exp.count == 0)
         {
             free_val(v);
             return new_err("Function received too many arguements. Received %i. Expected %i.", given, total);
         }
 
         // Pop symbol (parameter).
-        val *sym = exp_pop(first->header, 0);
+        val *sym = exp_pop(first->d.fun.header, 0);
 
         // Special symbol '&'. Symbol that comes after '&', will contain all remaining arguments in a list.
-        if (strcmp(sym->sym, "&") == 0)
+        if (strcmp(sym->d.str, "&") == 0)
         {
             // Ensure '&' is followed by exactly one Symbol.
-            if (first->header->count != 1)
+            if (first->d.fun.header->d.exp.count != 1)
             {
                 free_val(v);
                 return new_err("Invalid function format. Symbol '&' should be followed by exactly one Symbol.");
             }
 
             // Store remaining arguments in symbol following '&'.
-            val *next_sym = exp_pop(first->header, 0);
-            env_set(first->env, next_sym, b_list(e, v));
+            val *next_sym = exp_pop(first->d.fun.header, 0);
+            env_set(first->d.fun.env, next_sym, b_list(e, v));
             free_val(sym);
             free_val(next_sym);
             break;
@@ -509,7 +509,7 @@ val *call(env *e, val *first, val *v)
 
         // Store argument with symbol in function's local environment.
         val *val = exp_pop(v, 0);
-        env_set(first->env, sym, val);
+        env_set(first->d.fun.env, sym, val);
         free_val(sym);
         free_val(val);
     }
@@ -517,30 +517,30 @@ val *call(env *e, val *first, val *v)
     free_val(v);
 
     // If '&' is the first remainig symbol in the function header, and no arguments are given, store empty list.
-    if (first->header->count > 0 && strcmp(first->header->list[0]->sym, "0") == 0)
+    if (first->d.fun.header->d.exp.count > 0 && strcmp(first->d.fun.header->d.exp.list[0]->d.str, "0") == 0)
     {
         // Ensure '&' is followed by exactly one Symbol.
-        if (first->header->count != 2)
+        if (first->d.fun.header->d.exp.count != 2)
         {
             return new_err("Invalid function format. Symbol '&' should be followed by exactly one Symbol.");
         }
 
-        free_val(exp_pop(first->header, 0));
+        free_val(exp_pop(first->d.fun.header, 0));
 
         // Store empty list in the symbol following '&'.
-        val *sym = exp_pop(first->header, 0);
+        val *sym = exp_pop(first->d.fun.header, 0);
         val *val = new_lst();
-        env_set(first->env, sym, val);
+        env_set(first->d.fun.env, sym, val);
         free_val(sym);
         free_val(val);
     }
 
     // If all parameters are filled, evaluate the function.
-    if (first->header->count == 0)
+    if (first->d.fun.header->d.exp.count == 0)
     {
-        first->env->parent = e;
+        first->d.fun.env->parent = e;
 
-        return b_eval(first->env, exp_add(new_exp(), copy_val(first->body)));
+        return b_eval(first->d.fun.env, exp_add(new_exp(), copy_val(first->d.fun.body)));
     }
     else // Otherwise, return new function with remaining parameters.
     {
@@ -573,28 +573,28 @@ val *eval(env *e, val *v)
 val *eval_exp(env *e, val *v)
 {   
     // Evaluate all children.
-    for (int i = 0; i < v->count; i++)
+    for (int i = 0; i < v->d.exp.count; i++)
     {
-        v->list[i] = eval(e, v->list[i]);
+        v->d.exp.list[i] = eval(e, v->d.exp.list[i]);
     }
 
     // If any child is an error, return it.
-    for (int i = 0; i < v->count; i++)
+    for (int i = 0; i < v->d.exp.count; i++)
     {
-        if (v->list[i]->type == T_ERR)
+        if (v->d.exp.list[i]->type == T_ERR)
         {
             return exp_take(v, i);
         }
     }
 
     // If empty expression, return it.
-    if (v->count == 0)
+    if (v->d.exp.count == 0)
     {
         return v;
     }
 
     // If single child expression, return child.
-    if (v->count == 1)
+    if (v->d.exp.count == 1)
     {
         return exp_take(v, 0);
     }
