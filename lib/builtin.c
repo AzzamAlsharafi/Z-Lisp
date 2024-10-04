@@ -359,21 +359,64 @@ val *b_neq(env *e, val *v)
     return compare(e, v, "!=");
 }
 
-// Perform a mathematical operation on Number arguements. No limit on the number of arguments.
-// Accepts operations: '+', '-', '*', '/', '%', '^', 'min', 'max', '>', '<'.
-val *operation(env *e, val *v, char *op)
+// Perform an operation on Number arguements. No limit on the number of arguments.
+// If any Floats are present, all Integers will be converted to Floats, including the result.
+// Accepts operations: '+', '-', '*', '/', '%', '^', 'min', 'max', '<', '>'.
+val *num_operation(val *v, char *op)
 {
+    // Assert at least two arguments are passed.
+    ASSERT(v, v->d.exp.count >= 2, "Function '%s' passed less than two arguments.", op);
+
+    // Check if all arguments are Numbers.
     for (int i = 0; i < v->d.exp.count; i++)
     {
-        ASSERT_TYPE(op, v, i, T_INT);
+        ASSERT(v, v->d.exp.list[i]->type == T_INT || v->d.exp.list[i]->type == T_FLT,
+               "Function '%s' passed incorrect type for argument %i. Got %s, Expected Number.", op, i);
     }
 
+    // Convert all Integers to Floats if any Floats are present.
+    for (int i = 0; i < v->d.exp.count; i++)
+    {
+        if (v->d.exp.list[i]->type == T_FLT)
+        {
+            for (int j = 0; j < v->d.exp.count; j++)
+            {
+                if (v->d.exp.list[j]->type == T_INT)
+                {
+                    v->d.exp.list[j]->type = T_FLT;
+                    v->d.exp.list[j]->d.flt = v->d.exp.list[j]->d.intg;
+                }
+            }
+            break;
+        }
+    }
+
+    if (strcmp(op, "+") == 0 || strcmp(op, "-") == 0 || strcmp(op, "*") == 0 || strcmp(op, "/") == 0 || strcmp(op, "%") == 0 || strcmp(op, "^") == 0 || strcmp(op, "min") == 0 || strcmp(op, "max") == 0)
+    {
+        return num_math(v, op);
+    }
+    else if (strcmp(op, "<") == 0 || strcmp(op, ">") == 0)
+    {
+        return num_compare(v, op);
+    }
+
+    return new_err("Unknown operation '%s'.", op);
+}
+
+val *num_math(val* v, char* op){
     val *x = exp_pop(v, 0);
 
     // Special case for unary minus
     if (strcmp(op, "-") == 0 && v->d.exp.count == 0)
     {
-        x->d.intg = -x->d.intg;
+        if (x->type == T_INT)
+        {
+            x->d.intg = -x->d.intg;
+        }
+        else if (x->type == T_FLT)
+        {
+            x->d.flt = -x->d.flt;
+        }
     }
 
     while (v->d.exp.count > 0)
@@ -382,15 +425,36 @@ val *operation(env *e, val *v, char *op)
 
         if (strcmp(op, "+") == 0)
         {
-            x->d.intg += y->d.intg;
+            if (x->type == T_INT)
+            {
+                x->d.intg += y->d.intg;
+            }
+            else if (x->type == T_FLT)
+            {
+                x->d.flt += y->d.flt;
+            }
         }
         else if (strcmp(op, "-") == 0)
         {
-            x->d.intg -= y->d.intg;
+            if (x->type == T_INT)
+            {
+                x->d.intg -= y->d.intg;
+            }
+            else if (x->type == T_FLT)
+            {
+                x->d.flt -= y->d.flt;
+            }
         }
         else if (strcmp(op, "*") == 0)
         {
-            x->d.intg *= y->d.intg;
+            if (x->type == T_INT)
+            {
+                x->d.intg *= y->d.intg;
+            }
+            else if (x->type == T_FLT)
+            {
+                x->d.flt *= y->d.flt;
+            }
         }
         else if (strcmp(op, "/") == 0)
         {
@@ -401,88 +465,158 @@ val *operation(env *e, val *v, char *op)
                 x = new_err("Division By Zero.");
                 break;
             }
-            x->d.intg /= y->d.intg;
+
+            if (x->type == T_INT)
+            {
+                x->d.intg /= y->d.intg;
+            }
+            else if (x->type == T_FLT)
+            {
+                x->d.flt /= y->d.flt;
+            }
         }
         else if (strcmp(op, "%") == 0)
         {
-            x->d.intg %= y->d.intg;
+            if (x->type == T_INT)
+            {
+                x->d.intg %= y->d.intg;
+            }
+            else if (x->type == T_FLT)
+            {
+                x->d.flt = fmod(x->d.flt, y->d.flt);
+            }
         }
         else if (strcmp(op, "^") == 0)
         {
-            x->d.intg = pow(x->d.intg, y->d.intg);
+            if (x->type == T_INT)
+            {
+                x->d.intg = pow(x->d.intg, y->d.intg);
+            }
+            else if (x->type == T_FLT)
+            {
+                x->d.flt = pow(x->d.flt, y->d.flt);
+            }
         }
         else if (strcmp(op, "min") == 0)
         {
-            x->d.intg = x->d.intg < y->d.intg ? x->d.intg : y->d.intg;
+            if (x->type == T_INT)
+            {
+                x->d.intg = x->d.intg < y->d.intg ? x->d.intg : y->d.intg;
+            }
+            else if (x->type == T_FLT)
+            {
+                x->d.flt = x->d.flt < y->d.flt ? x->d.flt : y->d.flt;
+            }
         }
         else if (strcmp(op, "max") == 0)
         {
-            x->d.intg = x->d.intg > y->d.intg ? x->d.intg : y->d.intg;
+            if (x->type == T_INT)
+            {
+                x->d.intg = x->d.intg > y->d.intg ? x->d.intg : y->d.intg;
+            }
+            else if (x->type == T_FLT)
+            {
+                x->d.flt = x->d.flt > y->d.flt ? x->d.flt : y->d.flt;
+            }
         }
-        else if (strcmp(op, ">") == 0)
-        {
-            x->d.intg = x->d.intg > y->d.intg;
-        }
-        else if (strcmp(op, "<") == 0)
-        {
-            x->d.intg = x->d.intg < y->d.intg;
-        }
-
+        
         free_val(y);
     }
-
+    
     free_val(v);
     return x;
 }
 
+val *num_compare(val *v, char *op)
+{
+    val *x = exp_pop(v, 0);
+
+    val *result = new_int(-1);
+
+    while (v->d.exp.count > 0)
+    {
+        val *y = exp_pop(v, 0);
+
+        if (strcmp(op, ">") == 0)
+        {
+            if (x->type == T_INT)
+            {
+                result->d.intg = x->d.intg > y->d.intg;
+            }
+            else if (x->type == T_FLT)
+            {
+                result->d.intg = x->d.flt > y->d.flt;
+            }
+        }
+        else if (strcmp(op, "<") == 0)
+        {
+            if (x->type == T_INT)
+            {
+                result->d.intg = x->d.intg < y->d.intg;
+            }
+            else if (x->type == T_FLT)
+            {
+                result->d.intg = x->d.flt < y->d.flt;
+            }
+        }
+
+        free_val(x);
+        x = y;
+    }
+
+    free_val(x);
+    free_val(v);
+    return result;
+}
+
 val *b_add(env *e, val *v)
 {
-    return operation(e, v, "+");
+    return num_operation(v, "+");
 }
 
 val *b_sub(env *e, val *v)
 {
-    return operation(e, v, "-");
+    return num_operation(v, "-");
 }
 
 val *b_mul(env *e, val *v)
 {
-    return operation(e, v, "*");
+    return num_operation(v, "*");
 }
 
 val *b_div(env *e, val *v)
 {
-    return operation(e, v, "/");
+    return num_operation(v, "/");
 }
 
 val *b_mod(env *e, val *v)
 {
-    return operation(e, v, "%");
+    return num_operation(v, "%");
 }
 
 val *b_pow(env *e, val *v)
 {
-    return operation(e, v, "^");
+    return num_operation(v, "^");
 }
 
 val *b_min(env *e, val *v)
 {
-    return operation(e, v, "min");
+    return num_operation(v, "min");
 }
 
 val *b_max(env *e, val *v)
 {
-    return operation(e, v, "max");
+    return num_operation(v, "max");
 }
 
 val *b_gt(env *e, val *v)
 {
-    return operation(e, v, ">");
+    return num_operation(v, ">");
 }
 
 val *b_lt(env *e, val *v)
 {
-    return operation(e, v, "<");
+    return num_operation(v, "<");
 }
 
 // Return the type of an argument in a String.

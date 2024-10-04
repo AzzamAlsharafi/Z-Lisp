@@ -45,7 +45,11 @@ val *b_eq(env *e, val *v);
 
 val *b_neq(env *e, val *v);
 
-val *operation(env *e, val *v, char *op);
+val *num_operation(val *v, char *op);
+
+val *num_math(val* v, char* op);
+
+val *num_compare(val *v, char *op);
 
 val *b_add(env *e, val *v);
 
