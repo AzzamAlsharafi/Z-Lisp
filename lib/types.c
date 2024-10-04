@@ -334,73 +334,96 @@ void env_set_global(env *e, val *key, val *v)
 
 // ---------- Print ----------
 
-void print_val(val *v)
-{
+char* val_to_str(val *v){
+    char* str = malloc(512);
+
     switch (v->type)
     {
     case T_INT:
-        printf("%ld", v->d.intg);
+        snprintf(str, 511, "%ld", v->d.intg);
         break;
     case T_FLT:
-        printf("%f", v->d.flt);
+        snprintf(str, 511, "%f", v->d.flt);
         break;
     case T_ERR:
-        printf("Error: %s", v->d.str);
+        snprintf(str, 511, "Error: %s", v->d.str);
         break;
     case T_SYM:
-        printf("%s", v->d.str);
+        snprintf(str, 511, "%s", v->d.str);
         break;
     case T_STR:
-        print_str(v);
+        snprintf(str, 511, "\"%s\"", escape_str(v));
         break;
     case T_EXP:
-        print_exp(v, '(', ')');
-        break;
     case T_LST:
-        print_exp(v, '{', '}');
+        snprintf(str, 511, "%s", exp_to_str(v));
         break;
     case T_FUN:
         if (v->d.fun.blt)
         {
-            printf("<%s>", builtin_name(v->d.fun.blt));
+            snprintf(str, 511, "<%s>", builtin_name(v->d.fun.blt));
         }
         else
         {
-            printf("(fun ");
-            print_val(v->d.fun.header);
-            putchar(' ');
-            print_val(v->d.fun.body);
-            putchar(')');
+            snprintf(str, 511, "(fun %s %s)", val_to_str(v->d.fun.header), val_to_str(v->d.fun.body));
         }
         break;
     }
+
+    str = realloc(str, strlen(str) + 1);
+
+    return str;
 }
 
-void print_str(val *v)
+char* exp_to_str(val *v){
+    char* str = malloc(512);
+
+    int len = 0;
+
+    if (v->type == T_EXP)
+    {
+        len += snprintf(str+len, 511, "(");
+    } else {
+        len += snprintf(str+len, 511, "{");
+    }
+
+    for (int i = 0; i < v->d.exp.count; i++)
+    {
+        char* val_str = val_to_str(v->d.exp.list[i]);
+
+        if (i != (v->d.exp.count - 1))
+        {
+            len += snprintf(str+len, 511, "%s ", val_str);
+        } else {
+            len += snprintf(str+len, 511, "%s", val_str);
+        }
+    }
+
+    if (v->type == T_EXP)
+    {
+        len += snprintf(str+len, 511, ")");
+    } else {
+        len += snprintf(str+len, 511, "}");
+    }
+
+    str = realloc(str, strlen(str) + 1);
+
+    return str;
+}
+
+char* escape_str(val *v)
 {
     char *escaped = malloc(strlen(v->d.str) + 1);
     strcpy(escaped, v->d.str);
 
     escaped = mpcf_escape(escaped);
 
-    printf("\"%s\"", escaped);
-
-    free(escaped);
+    return escaped;
 }
 
-void print_exp(val *v, char start, char end)
+void print_val(val *v)
 {
-    putchar(start);
-    for (int i = 0; i < v->d.exp.count; i++)
-    {
-        print_val(v->d.exp.list[i]);
-
-        if (i != (v->d.exp.count - 1))
-        {
-            putchar(' ');
-        }
-    }
-    putchar(end);
+    printf("%s", val_to_str(v));
 }
 
 // Print with newline.

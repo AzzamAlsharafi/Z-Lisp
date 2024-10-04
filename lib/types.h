@@ -108,11 +108,13 @@ void env_set_global(env *e, val *key, val *v);
 
 // ---------- Print ----------
 
+char* val_to_str(val *v);
+
+char* exp_to_str(val *v);
+
+char* escape_str(val *v);
+
 void print_val(val *v);
-
-void print_str(val *v);
-
-void print_exp(val *v, char start, char end);
 
 void print_val_ln(val *v);
 
