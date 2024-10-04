@@ -118,7 +118,7 @@ void print_val_ln(val *v);
 
 // ---------- Val - Type Name ----------
 
-char *type_name(val *v);
+char *type_name(val_t type);
 
 // ---------- Expression/List - Add, Pop, Take, Join ----------
 

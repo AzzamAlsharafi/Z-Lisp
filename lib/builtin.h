@@ -17,6 +17,8 @@ val *b_join(env *e, val *v);
 
 val *b_len(env *e, val *v);
 
+int check_reserved(char* sym);
+
 val *def_var(env *e, val *v, char *op);
 
 val *b_def(env *e, val *v);

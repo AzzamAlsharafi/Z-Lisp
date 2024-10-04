@@ -412,9 +412,9 @@ void print_val_ln(val *v)
 
 // ---------- Val - Type Name ----------
 
-char *type_name(val *v)
+char *type_name(val_t type)
 {
-    switch (v->type)
+    switch (type)
     {
     case T_INT:
         return "Integer";
@@ -621,7 +621,7 @@ val *eval_exp(env *e, val *v)
     val *first = exp_pop(v, 0);
     if (first->type != T_FUN)
     {
-        val *err = new_err("Expression must start with a Function. Received '%s'.", type_name(first));
+        val *err = new_err("Expression must start with a Function. Received '%s'.", type_name(first->type));
         free_val(v);
         free_val(first);
         return err;
