@@ -127,7 +127,7 @@ int check_reserved(char* sym){
     
     static const char *keywords[] = {
         "==", "!=", "error", "print", "load", "if", "<", ">", "len", "+", "-", "*", "/", "%", "^", 
-        "min", "max", "def", "env", "list", "join", "head", "tail", "eval", "exit", "fun", "="
+        "min", "max", "def", "env", "list", "join", "head", "tail", "eval", "exit", "fun", "=", "typeof"
     };
 
     static int num_keywords = sizeof(keywords) / sizeof(keywords[0]);
@@ -485,6 +485,17 @@ val *b_lt(env *e, val *v)
     return operation(e, v, "<");
 }
 
+// Return the type of an argument in a String.
+val *b_typeof(env *e, val *v)
+{
+    ASSERT_NUM("typeof", v, 1);
+
+    val *type = new_str(type_name(v->d.exp.list[0]->type));
+    free_val(v);
+
+    return type;
+}
+
 // Register a builtin function in the environment.
 void add_builtin(env *e, char *key, builtin blt)
 {
@@ -525,6 +536,7 @@ void add_builtins(env *e)
     add_builtin(e, "load", b_load);
     add_builtin(e, "print", b_print);
     add_builtin(e, "error", b_error);
+    add_builtin(e, "typeof", b_typeof);
 }
 
 // Return the name of a builtin function.
@@ -637,6 +649,10 @@ char *builtin_name(builtin f)
     if (f == b_error)
     {
         return "builtin_error";
+    }
+    if (f == b_typeof)
+    {
+        return "builtin_typeof";
     }
 
     return "builtin_function";
