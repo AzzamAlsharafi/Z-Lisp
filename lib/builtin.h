@@ -13,8 +13,6 @@ val *b_eval(env *e, val *v);
 
 val *exp_join(val *x, val *y);
 
-val *b_join(env *e, val *v);
-
 val *b_len(env *e, val *v);
 
 int check_reserved(char* sym);
@@ -50,6 +48,10 @@ val *num_operation(val *v, char *op);
 val *num_math(val* v, char* op);
 
 val *num_compare(val *v, char *op);
+
+val *join(val *v);
+
+val *str_concat(val *v);
 
 val *b_add(env *e, val *v);
 

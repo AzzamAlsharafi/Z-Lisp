@@ -27,6 +27,12 @@
     "Function '%s' passed incorrect number of arguments. Got %i, Expected %i.", \
     func, args->d.exp.count, num)
 
+// Assert minimum number of arguments.
+#define ASSERT_MIN(func, args, num) \
+  ASSERT(args, args->d.exp.count >= num, \
+    "Function '%s' passed incorrect number of arguments. Got %i, Expected at least %i.", \
+    func, args->d.exp.count, num)
+
 // Assert argument is not empty.
 #define ASSERT_NOT_EMPTY(func, args, index) \
   ASSERT(args, args->d.exp.list[index]->d.exp.count != 0, \
@@ -91,25 +97,6 @@ val *b_eval(env *e, val *v)
     return eval(e, l);
 }
 
-// Join many Lists.
-val *b_join(env *e, val *v)
-{
-    for (int i = 0; i < v->d.exp.count; i++)
-    {
-        ASSERT_TYPE("join", v, i, T_LST);
-    }
-
-    val *l = exp_pop(v, 0);
-
-    while (v->d.exp.count)
-    {
-        l = exp_join(l, exp_pop(v, 0));
-    }
-
-    free_val(v);
-    return l;
-}
-
 // Return the length of a List.
 val *b_len(env *e, val *v)
 {
@@ -127,7 +114,7 @@ int check_reserved(char* sym){
     
     static const char *keywords[] = {
         "==", "!=", "error", "print", "load", "if", "<", ">", "len", "+", "-", "*", "/", "%", "^", 
-        "min", "max", "def", "env", "list", "join", "head", "tail", "eval", "exit", "fun", "=", "typeof"
+        "min", "max", "def", "env", "list", "head", "tail", "eval", "exit", "fun", "=", "typeof"
     };
 
     static int num_keywords = sizeof(keywords) / sizeof(keywords[0]);
@@ -365,13 +352,13 @@ val *b_neq(env *e, val *v)
 val *num_operation(val *v, char *op)
 {
     // Assert at least two arguments are passed.
-    ASSERT(v, v->d.exp.count >= 2, "Function '%s' passed less than two arguments.", op);
+    ASSERT_MIN(op, v, 2);
 
     // Check if all arguments are Numbers.
     for (int i = 0; i < v->d.exp.count; i++)
     {
         ASSERT(v, v->d.exp.list[i]->type == T_INT || v->d.exp.list[i]->type == T_FLT,
-               "Function '%s' passed incorrect type for argument %i. Got %s, Expected Number.", op, i);
+               "Function '%s' passed incorrect type for argument %i. Got %s, Expected Number.", op, i, type_name(v->d.exp.list[i]->type));
     }
 
     // Convert all Integers to Floats if any Floats are present.
@@ -569,8 +556,73 @@ val *num_compare(val *v, char *op)
     return result;
 }
 
+// Join any number of arguments. If any argument is a List, it will be joined. Otherwise, it will be added to the List.
+// First argument will always be a List.
+val *join(val *v)
+{
+    val *l = exp_pop(v, 0);
+
+    while (v->d.exp.count)
+    {
+        val* x = exp_pop(v, 0);
+
+        if (x->type != T_LST) {
+            exp_add(l, x);
+        } else {
+            l = exp_join(l, x);
+        }
+    }
+
+    free_val(v);
+    return l;
+}
+
+// Concatenate any number of arguments. If any argument is not a String, it will be converted.
+val *str_concat(val *v)
+{
+    val *s = exp_pop(v, 0);
+
+    while (v->d.exp.count)
+    {
+        val *x = exp_pop(v, 0);
+
+        if (x->type == T_STR)
+        {
+            s->d.str = realloc(s->d.str, strlen(s->d.str) + strlen(x->d.str) + 1);
+            strcat(s->d.str, x->d.str);
+        }
+        else
+        {
+            char *str = val_to_str(x);
+            s->d.str = realloc(s->d.str, strlen(s->d.str) + strlen(str) + 1);
+            strcat(s->d.str, str);
+            free(str);
+        }
+
+        free_val(x);
+    }
+
+    free_val(v);
+    return s;
+}
+
+// Add any number of arguments.
+// Method of addition depends on the type of the first argument.
+// If the first argument is a String, all arguments will be concatenated, and non-Strings will be converted.
+// If the first argument is a List, all arguments will be joined. If any argument is not a List, it will be added to the List.
+// If the first argument is a Number, all arguments will be added together. If any argument is not a Number, it will throw an error.
 val *b_add(env *e, val *v)
 {
+    ASSERT_MIN("+", v, 2);
+
+    if (v->d.exp.list[0]->type == T_STR) {
+        return str_concat(v);
+    } else if (v->d.exp.list[0]->type == T_LST) {
+        return join(v);
+    } else {
+        return num_operation(v, "+");
+    }
+
     return num_operation(v, "+");
 }
 
@@ -646,7 +698,6 @@ void add_builtins(env *e)
     add_builtin(e, "list", b_list);
     add_builtin(e, "head", b_head);
     add_builtin(e, "tail", b_tail);
-    add_builtin(e, "join", b_join);
     add_builtin(e, "eval", b_eval);
     add_builtin(e, "+", b_add);
     add_builtin(e, "-", b_sub);
@@ -687,10 +738,6 @@ char *builtin_name(builtin f)
     if (f == b_tail)
     {
         return "builtin_tail";
-    }
-    if (f == b_join)
-    {
-        return "builtin_join";
     }
     if (f == b_eval)
     {
