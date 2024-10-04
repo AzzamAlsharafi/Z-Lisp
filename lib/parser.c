@@ -75,9 +75,26 @@ val *parse_node(mpc_ast_t *node)
 val *parse_num(mpc_ast_t *node)
 {
     errno = 0;
-    double n = strtod(node->contents, NULL);
 
-    return errno != ERANGE ? new_num(n) : new_err("Invalid Number '%s'.", node->contents);
+    if (strstr(node->contents, "."))
+    {
+        double n = strtod(node->contents, NULL);
+
+        if (errno != ERANGE)
+        {
+            return new_flt(n);
+        }
+    } else {
+        long n = strtol(node->contents, NULL, 10);
+
+        if (errno != ERANGE)
+        {
+            return new_int(n);
+        }
+    }
+
+    return new_err("Invalid number '%s'.", node->contents);
+
 }
 
 // Parse string node and return val.

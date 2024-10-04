@@ -3,7 +3,8 @@
 
 typedef enum
 {
-    T_NUM, // Number
+    T_INT, // Integer
+    T_FLT, // Float
     T_ERR, // Error
     T_SYM, // Symbol
     T_STR, // String
@@ -23,7 +24,8 @@ typedef val *(*builtin)(env *, val *);
 
 union val_data
 {
-    double num;
+    long intg;
+    double flt;
     
     char *str;
 
@@ -60,7 +62,9 @@ struct env
 
 // ---------- Constructors ----------
 
-val *new_num(double n);
+val *new_int(long n);
+
+val *new_flt(double n);
 
 val *new_err(char *format, ...);
 

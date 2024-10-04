@@ -88,7 +88,7 @@ val *b_len(env *e, val *v)
     ASSERT(v, v->d.exp.list[0]->type == T_LST, "Function 'len' recieved '%s'. Expected List.", type_name(v->d.exp.list[0]));
 
     val *l = exp_take(v, 0);
-    val *len = new_num(l->d.exp.count);
+    val *len = new_int(l->d.exp.count);
     free_val(l);
     return len;
 }
@@ -198,11 +198,11 @@ val *b_fun(env *e, val *v)
 val *b_if(env *e, val *v)
 {
     ASSERT(v, v->d.exp.count == 3, "Function 'if' recieved %i arguments. Expected 3 arguments.", v->d.exp.count);
-    ASSERT(v, v->d.exp.list[0]->type == T_NUM, "Function 'if' argument %i is '%s'. Expected Number.", 0, type_name(v->d.exp.list[0]));
+    ASSERT(v, v->d.exp.list[0]->type == T_INT, "Function 'if' argument %i is '%s'. Expected Integer.", 0, type_name(v->d.exp.list[0]));
     ASSERT(v, v->d.exp.list[1]->type == T_LST, "Function 'if' argument %i is '%s'. Expected List.", 1, type_name(v->d.exp.list[0]));
     ASSERT(v, v->d.exp.list[2]->type == T_LST, "Function 'if' argument %i is '%s'. Expected List.", 2, type_name(v->d.exp.list[0]));
 
-    if (v->d.exp.list[0]->d.num)
+    if (v->d.exp.list[0]->d.intg)
     {
         return b_eval(e, exp_add(new_lst(), v->d.exp.list[1]));
     }
@@ -297,7 +297,7 @@ val *compare(env *e, val *v, char *op)
         r = !val_eq(v->d.exp.list[0], v->d.exp.list[1]);
     }
     free_val(v);
-    return new_num(r);
+    return new_int(r);
 }
 
 // Check if two arguments are equal.
@@ -318,7 +318,7 @@ val *operation(env *e, val *v, char *op)
 {
     for (int i = 0; i < v->d.exp.count; i++)
     {
-        if (v->d.exp.list[i]->type != T_NUM)
+        if (v->d.exp.list[i]->type != T_INT)
         {
             val *err = new_err("Operator '%s' received incorrect arguments. Arguement %i is a '%s'.", op, i, type_name(v->d.exp.list[i]));
             free_val(v);
@@ -331,7 +331,7 @@ val *operation(env *e, val *v, char *op)
     // Special case for unary minus
     if (strcmp(op, "-") == 0 && v->d.exp.count == 0)
     {
-        x->d.num = -x->d.num;
+        x->d.intg = -x->d.intg;
     }
 
     while (v->d.exp.count > 0)
@@ -340,50 +340,50 @@ val *operation(env *e, val *v, char *op)
 
         if (strcmp(op, "+") == 0)
         {
-            x->d.num += y->d.num;
+            x->d.intg += y->d.intg;
         }
         else if (strcmp(op, "-") == 0)
         {
-            x->d.num -= y->d.num;
+            x->d.intg -= y->d.intg;
         }
         else if (strcmp(op, "*") == 0)
         {
-            x->d.num *= y->d.num;
+            x->d.intg *= y->d.intg;
         }
         else if (strcmp(op, "/") == 0)
         {
-            if (y->d.num == 0)
+            if (y->d.intg == 0)
             {
                 free_val(x);
                 free_val(y);
                 x = new_err("Division By Zero.");
                 break;
             }
-            x->d.num /= y->d.num;
+            x->d.intg /= y->d.intg;
         }
         else if (strcmp(op, "%") == 0)
         {
-            x->d.num = fmod(x->d.num, y->d.num);
+            x->d.intg %= y->d.intg;
         }
         else if (strcmp(op, "^") == 0)
         {
-            x->d.num = pow(x->d.num, y->d.num);
+            x->d.intg = pow(x->d.intg, y->d.intg);
         }
         else if (strcmp(op, "min") == 0)
         {
-            x->d.num = x->d.num < y->d.num ? x->d.num : y->d.num;
+            x->d.intg = x->d.intg < y->d.intg ? x->d.intg : y->d.intg;
         }
         else if (strcmp(op, "max") == 0)
         {
-            x->d.num = x->d.num > y->d.num ? x->d.num : y->d.num;
+            x->d.intg = x->d.intg > y->d.intg ? x->d.intg : y->d.intg;
         }
         else if (strcmp(op, ">") == 0)
         {
-            x->d.num = x->d.num > y->d.num;
+            x->d.intg = x->d.intg > y->d.intg;
         }
         else if (strcmp(op, "<") == 0)
         {
-            x->d.num = x->d.num < y->d.num;
+            x->d.intg = x->d.intg < y->d.intg;
         }
 
         free_val(y);

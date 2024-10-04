@@ -10,10 +10,17 @@
 
 // ---------- Constructors ---------- 
 
-val *new_num(double n)
+val *new_int(long n)
 {
     val *v = malloc(sizeof(val));
-    *v = (val){.type = T_NUM, .d.num = n};
+    *v = (val){.type = T_INT, .d.intg = n};
+    return v;
+}
+
+val *new_flt(double n)
+{
+    val *v = malloc(sizeof(val));
+    *v = (val){.type = T_FLT, .d.flt = n};
     return v;
 }
 
@@ -98,7 +105,8 @@ void free_val(val *v)
 
     switch (v->type)
     {
-    case T_NUM:
+    case T_INT:
+    case T_FLT:
         break;
 
     case T_FUN:
@@ -155,8 +163,11 @@ val *copy_val(val *v)
 
     switch (v->type)
     {
-    case T_NUM:
-        c->d.num = v->d.num;
+    case T_INT:
+        c->d.intg = v->d.intg;
+        break;
+    case T_FLT:
+        c->d.flt = v->d.flt;
         break;
 
     case T_FUN:
@@ -226,8 +237,10 @@ int val_eq(val *x, val *y)
 
     switch (x->type)
     {
-    case T_NUM:
-        return (x->d.num == y->d.num);
+    case T_INT:
+        return (x->d.intg == y->d.intg);
+    case T_FLT:
+        return (x->d.flt == y->d.flt);
 
     case T_ERR:
         return (strcmp(x->d.str, y->d.str) == 0);
@@ -325,8 +338,11 @@ void print_val(val *v)
 {
     switch (v->type)
     {
-    case T_NUM:
-        printf("%f", v->d.num);
+    case T_INT:
+        printf("%ld", v->d.intg);
+        break;
+    case T_FLT:
+        printf("%f", v->d.flt);
         break;
     case T_ERR:
         printf("Error: %s", v->d.str);
@@ -400,8 +416,10 @@ char *type_name(val *v)
 {
     switch (v->type)
     {
-    case T_NUM:
-        return "Number";
+    case T_INT:
+        return "Integer";
+    case T_FLT:
+        return "Float";
     case T_ERR:
         return "Error";
     case T_SYM:
