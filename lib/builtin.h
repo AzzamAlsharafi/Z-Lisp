@@ -73,6 +73,14 @@ val *b_gt(env *e, val *v);
 
 val *b_lt(env *e, val *v);
 
+val *b_typeof(env *e, val *v);
+
+val *b_string(env *e, val *v);
+
+val *b_int(env *e, val *v);
+
+val *b_float(env *e, val *v);
+
 void add_builtin(env *e, char *key, builtin blt);
 
 void add_builtins(env *e);

@@ -49,6 +49,11 @@
     "Function '%s' passed incorrect type for element %i of argument %i. Got %s, Expected %s.", \
     func, elem, index, type_name(args->d.exp.list[index]->d.exp.list[elem]->type), type_name(expect))
 
+// Assert type of argument is Number.
+#define ASSERT_NUM_TYPE(func, args, index) \
+  ASSERT(args, v->d.exp.list[index]->type == T_INT || v->d.exp.list[index]->type == T_FLT, \
+    "Function '%s' passed incorrect type for argument %i. Got %s, Expected Number.", func, index, type_name(v->d.exp.list[index]->type));
+
 
 extern mpc_parser_t *Parser;
 
@@ -114,7 +119,7 @@ int check_reserved(char* sym){
     
     static const char *keywords[] = {
         "==", "!=", "error", "print", "load", "if", "<", ">", "len", "+", "-", "*", "/", "%", "^", 
-        "min", "max", "def", "env", "list", "head", "tail", "eval", "exit", "fun", "=", "typeof"
+        "min", "max", "def", "env", "list", "head", "tail", "eval", "exit", "fun", "=", "typeof", "string", "int", "float"
     };
 
     static int num_keywords = sizeof(keywords) / sizeof(keywords[0]);
@@ -357,8 +362,7 @@ val *num_operation(val *v, char *op)
     // Check if all arguments are Numbers.
     for (int i = 0; i < v->d.exp.count; i++)
     {
-        ASSERT(v, v->d.exp.list[i]->type == T_INT || v->d.exp.list[i]->type == T_FLT,
-               "Function '%s' passed incorrect type for argument %i. Got %s, Expected Number.", op, i, type_name(v->d.exp.list[i]->type));
+        ASSERT_NUM_TYPE(op, v, i);
     }
 
     // Convert all Integers to Floats if any Floats are present.
@@ -682,6 +686,61 @@ val *b_typeof(env *e, val *v)
     return type;
 }
 
+// Convert an argument to a String.
+val *b_string(env *e, val *v)
+{
+    ASSERT_NUM("string", v, 1);
+
+    val *str = new_str(val_to_str(v->d.exp.list[0]));
+    free_val(v);
+
+    return str;
+}
+
+// Convert number to Integer.
+val *b_int(env *e, val *v)
+{
+    ASSERT_NUM("int", v, 1);
+    ASSERT_NUM_TYPE("int", v, 0);
+
+    val *i = NULL;
+
+    if (v->d.exp.list[0]->type == T_INT)
+    {
+        i = v->d.exp.list[0];
+    }
+    else if (v->d.exp.list[0]->type == T_FLT)
+    {
+        i = new_int((int) v->d.exp.list[0]->d.flt);
+    }
+
+    free_val(v);
+
+    return i;
+}
+
+// Convert number to Float.
+val *b_float(env *e, val *v)
+{
+    ASSERT_NUM("float", v, 1);
+    ASSERT_NUM_TYPE("float", v, 0);
+
+    val *f = NULL;
+
+    if (v->d.exp.list[0]->type == T_INT)
+    {
+        f = new_flt((float) v->d.exp.list[0]->d.intg);
+    }
+    else if (v->d.exp.list[0]->type == T_FLT)
+    {
+        f = v->d.exp.list[0];
+    }
+
+    free_val(v);
+
+    return f;
+}
+
 // Register a builtin function in the environment.
 void add_builtin(env *e, char *key, builtin blt)
 {
@@ -722,6 +781,9 @@ void add_builtins(env *e)
     add_builtin(e, "print", b_print);
     add_builtin(e, "error", b_error);
     add_builtin(e, "typeof", b_typeof);
+    add_builtin(e, "string", b_string);
+    add_builtin(e, "int", b_int);
+    add_builtin(e, "float", b_float);
 }
 
 // Return the name of a builtin function.
@@ -834,6 +896,18 @@ char *builtin_name(builtin f)
     if (f == b_typeof)
     {
         return "builtin_typeof";
+    }
+    if (f == b_string)
+    {
+        return "builtin_string";
+    }
+    if (f == b_int)
+    {
+        return "builtin_int";
+    }
+    if (f == b_float)
+    {
+        return "builtin_float";
     }
 
     return "builtin_function";
