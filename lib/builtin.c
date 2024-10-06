@@ -397,19 +397,6 @@ val *num_operation(val *v, char *op)
 val *num_math(val* v, char* op){
     val *x = exp_pop(v, 0);
 
-    // Special case for unary minus
-    if (strcmp(op, "-") == 0 && v->d.exp.count == 0)
-    {
-        if (x->type == T_INT)
-        {
-            x->d.intg = -x->d.intg;
-        }
-        else if (x->type == T_FLT)
-        {
-            x->d.flt = -x->d.flt;
-        }
-    }
-
     while (v->d.exp.count > 0)
     {
         val *y = exp_pop(v, 0);
@@ -632,6 +619,25 @@ val *b_add(env *e, val *v)
 
 val *b_sub(env *e, val *v)
 {
+    // Special case for unary minus
+    if (v->d.exp.count == 1)
+    {
+        ASSERT_NUM_TYPE("-", v, 0);
+
+        val *x = exp_take(v, 0);
+
+        if (x->type == T_INT)
+        {
+            x->d.intg = -x->d.intg;
+        }
+        else if (x->type == T_FLT)
+        {
+            x->d.flt = -x->d.flt;
+        }
+
+        return x;
+    }
+
     return num_operation(v, "-");
 }
 
