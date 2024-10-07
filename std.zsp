@@ -8,6 +8,11 @@
 (def { tail } (fun {l} {remove l 0}))
 (def { join } (fun {& args} {eval (+ {+ {}} args)}))
 
+; Comparison
+(def { != } (fun {x y} {!(== x y)}))
+(def { >= } (fun {x y} {|| (> x y) (== x y)}))
+(def { <= } (fun {x y} {|| (< x y) (== x y)}))
+
 ; Function Definitions
 (def {func} (fun {f b} {
   def (head f) (fun (tail f) b)

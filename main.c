@@ -61,7 +61,7 @@ int main(int argc, char **argv)
     "                                                                                       \
         number      : /-?[0-9]+\\.?[0-9]*/ ;                                                \
         string      : /\"(\\\\.|[^\"])*\"/ ;                                                \
-        symbol      : /[a-zA-Z0-9^%_+\\-*\\/\\\\=<>!&]+/ ;                                  \
+        symbol      : /[a-zA-Z0-9|^%_+\\-*\\/\\\\=<>!&]+/ ;                                  \
         expression  : '(' <component>* ')' ;                                                \
         list        : '{' <component>* '}' ;                                                \
         component   : <number> | <string> | <symbol> | <expression> | <list> | <comment> ;  \

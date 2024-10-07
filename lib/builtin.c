@@ -136,8 +136,8 @@ val *b_len(env *e, val *v)
 int check_reserved(char* sym){
     
     static const char *keywords[] = {
-        "==", "!=", "error", "print", "load", "if", "<", ">", "len", "+", "-", "*", "/", "%", "^", 
-        "min", "max", "def", "env", "list", "get", "remove", "eval", "exit", "fun", "=", "typeof", "string", "int", "float"
+        "==", "!", "error", "print", "load", "if", "<", ">", "||", "&&", "len", "+", "-", "*", "/", "%", "^", 
+        "def", "env", "list", "get", "remove", "eval", "exit", "fun", "=", "typeof", "string", "int", "float"
     };
 
     static int num_keywords = sizeof(keywords) / sizeof(keywords[0]);
@@ -338,35 +338,27 @@ val *b_error(env *e, val *v)
     return err;
 }
 
-// Compare two arguments.
-// Accepts two operations: '==' and '!='.
-val *compare(env *e, val *v, char *op)
+// Check if two arguments are equal.
+val *b_eq(env *e, val *v)
 {
-    ASSERT_NUM(op, v, 2);
+    ASSERT_NUM("==", v, 2);
 
-    int r;
-    if (strcmp(op, "==") == 0)
-    {
-        r = val_eq(v->d.exp.list[0], v->d.exp.list[1]);
-    }
-    if (strcmp(op, "!=") == 0)
-    {
-        r = !val_eq(v->d.exp.list[0], v->d.exp.list[1]);
-    }
+    int r = val_eq(v->d.exp.list[0], v->d.exp.list[1]);
+
     free_val(v);
     return new_int(r);
 }
 
-// Check if two arguments are equal.
-val *b_eq(env *e, val *v)
+// Negate boolean.
+val *b_not(env *e, val *v)
 {
-    return compare(e, v, "==");
-}
+    ASSERT_NUM("!", v, 1);
+    ASSERT_TYPE("!", v, 0, T_INT);
 
-// Check if two arguments are not equal.
-val *b_neq(env *e, val *v)
-{
-    return compare(e, v, "!=");
+    val* r = exp_take(v, 0);
+    r->d.intg = !r->d.intg;
+
+    return r;
 }
 
 // Perform an operation on Number arguements. No limit on the number of arguments.
@@ -404,7 +396,7 @@ val *num_operation(val *v, char *op)
     {
         return num_math(v, op);
     }
-    else if (strcmp(op, "<") == 0 || strcmp(op, ">") == 0)
+    else if (strcmp(op, "<") == 0 || strcmp(op, ">") == 0 || strcmp(op, "||") == 0 || strcmp(op, "&&") == 0)
     {
         return num_compare(v, op);
     }
@@ -529,6 +521,18 @@ val *num_compare(val *v, char *op)
 
     val *result = new_int(-1);
 
+    if (strcmp(op, "||") == 0 || strcmp(op, "&&") == 0)
+    {
+        if (x->type == T_INT)
+        {
+            result->d.intg = x->d.intg;
+        }
+        else if (x->type == T_FLT)
+        {
+            result->d.intg = x->d.flt;
+        }
+    }
+
     while (v->d.exp.count > 0)
     {
         val *y = exp_pop(v, 0);
@@ -553,6 +557,26 @@ val *num_compare(val *v, char *op)
             else if (x->type == T_FLT)
             {
                 result->d.intg = x->d.flt < y->d.flt;
+            }
+        } else if (strcmp(op, "||") == 0)
+        {
+            if (x->type == T_INT)
+            {
+                result->d.intg = result->d.intg || y->d.intg;
+            }
+            else if (x->type == T_FLT)
+            {
+                result->d.intg = result->d.intg || y->d.flt;
+            }
+        } else if (strcmp(op, "&&") == 0)
+        {
+            if (x->type == T_INT)
+            {
+                result->d.intg = result->d.intg && y->d.intg;
+            }
+            else if (x->type == T_FLT)
+            {
+                result->d.intg = result->d.intg && y->d.flt;
             }
         }
 
@@ -679,16 +703,6 @@ val *b_pow(env *e, val *v)
     return num_operation(v, "^");
 }
 
-val *b_min(env *e, val *v)
-{
-    return num_operation(v, "min");
-}
-
-val *b_max(env *e, val *v)
-{
-    return num_operation(v, "max");
-}
-
 val *b_gt(env *e, val *v)
 {
     return num_operation(v, ">");
@@ -697,6 +711,16 @@ val *b_gt(env *e, val *v)
 val *b_lt(env *e, val *v)
 {
     return num_operation(v, "<");
+}
+
+val *b_or(env *e, val *v)
+{
+    return num_operation(v, "||");
+}
+
+val *b_and(env *e, val *v)
+{
+    return num_operation(v, "&&");
 }
 
 // Return the type of an argument in a String.
@@ -794,8 +818,6 @@ void add_builtins(env *e)
     add_builtin(e, "/", b_div);
     add_builtin(e, "%", b_mod);
     add_builtin(e, "^", b_pow);
-    add_builtin(e, "min", b_min);
-    add_builtin(e, "max", b_max);
     add_builtin(e, "def", b_def);
     add_builtin(e, "=", b_put);
     add_builtin(e, "env", b_env);
@@ -804,8 +826,10 @@ void add_builtins(env *e)
     add_builtin(e, "len", b_len);
     add_builtin(e, ">", b_gt);
     add_builtin(e, "<", b_lt);
+    add_builtin(e, "||", b_or);
+    add_builtin(e, "&&", b_and);
     add_builtin(e, "==", b_eq);
-    add_builtin(e, "!=", b_neq);
+    add_builtin(e, "!", b_not);
     add_builtin(e, "if", b_if);
     add_builtin(e, "load", b_load);
     add_builtin(e, "print", b_print);
@@ -859,14 +883,6 @@ char *builtin_name(builtin f)
     {
         return "builtin_pow";
     }
-    if (f == b_min)
-    {
-        return "builtin_min";
-    }
-    if (f == b_max)
-    {
-        return "builtin_max";
-    }
     if (f == b_def)
     {
         return "builtin_def";
@@ -899,13 +915,21 @@ char *builtin_name(builtin f)
     {
         return "builtin_lt";
     }
+    if (f == b_or)
+    {
+        return "builtin_or";
+    }
+    if (f == b_and)
+    {
+        return "builtin_and";
+    }
     if (f == b_eq)
     {
         return "builtin_eq";
     }
-    if (f == b_neq)
+    if (f == b_not)
     {
-        return "builtin_neq";
+        return "builtin_not";
     }
     if (f == b_if)
     {

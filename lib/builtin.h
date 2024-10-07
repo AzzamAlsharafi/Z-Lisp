@@ -37,11 +37,9 @@ val *b_print(env *e, val *v);
 
 val *b_error(env *e, val *v);
 
-val *compare(env *e, val *v, char *op);
-
 val *b_eq(env *e, val *v);
 
-val *b_neq(env *e, val *v);
+val *b_not(env *e, val *v);
 
 val *num_operation(val *v, char *op);
 
@@ -65,13 +63,13 @@ val *b_mod(env *e, val *v);
 
 val *b_pow(env *e, val *v);
 
-val *b_min(env *e, val *v);
-
-val *b_max(env *e, val *v);
-
 val *b_gt(env *e, val *v);
 
 val *b_lt(env *e, val *v);
+
+val *b_or(env *e, val *v);
+
+val *b_and(env *e, val *v);
 
 val *b_typeof(env *e, val *v);
 
