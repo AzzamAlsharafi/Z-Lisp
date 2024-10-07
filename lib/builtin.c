@@ -62,30 +62,43 @@
 
 extern mpc_parser_t *Parser;
 
-// Return the first element of a List.
-val *b_head(env *e, val *v)
+// Return the element i of a List.
+val *b_get(env *e, val *v)
 {
-    ASSERT_NUM("head", v, 1);
-    ASSERT_TYPE("head", v, 0, T_LST);
-    ASSERT_NOT_EMPTY("head", v, 0);
+    ASSERT_NUM("get", v, 2);
+    ASSERT_TYPE("get", v, 0, T_LST);
+    ASSERT_TYPE("get", v, 1, T_INT);
 
-    val *l = exp_take(v, 0);
-    while (l->d.exp.count > 1)
-    {
-        free_val(exp_pop(l, 1));
-    }
-    return l;
+    ASSERT(v, v->d.exp.list[0]->d.exp.count > v->d.exp.list[1]->d.intg, 
+        "Function 'get' index out of bounds (index: %i, list length: %i).", v->d.exp.list[1]->d.intg, v->d.exp.list[0]->d.exp.count);
+
+    val *l = exp_pop(v, 0);
+    val *i = exp_take(v, 0);
+    
+    val *x = exp_take(l, i->d.intg);
+
+    free_val(i);
+
+    return x;
 }
 
-// Return the tail (all elements except the first) of a List.
-val *b_tail(env *e, val *v)
+// Remove element i from a List, and return the remianing List.
+val *b_remove(env *e, val *v)
 {
-    ASSERT_NUM("tail", v, 1);
-    ASSERT_TYPE("tail", v, 0, T_LST);
-    ASSERT_NOT_EMPTY("tail", v, 0);
+    ASSERT_NUM("get", v, 2);
+    ASSERT_TYPE("get", v, 0, T_LST);
+    ASSERT_TYPE("get", v, 1, T_INT);
 
-    val *l = exp_take(v, 0);
-    free_val(exp_pop(l, 0));
+    ASSERT(v, v->d.exp.list[0]->d.exp.count > v->d.exp.list[1]->d.intg, 
+        "Function 'remove' index out of bounds (index: %i, list length: %i).", v->d.exp.list[1]->d.intg, v->d.exp.list[0]->d.exp.count);
+
+    val *l = exp_pop(v, 0);
+    val *i = exp_take(v, 0);
+
+    free_val(exp_pop(l, i->d.intg));
+
+    free_val(i);
+
     return l;
 }
 
@@ -124,7 +137,7 @@ int check_reserved(char* sym){
     
     static const char *keywords[] = {
         "==", "!=", "error", "print", "load", "if", "<", ">", "len", "+", "-", "*", "/", "%", "^", 
-        "min", "max", "def", "env", "list", "head", "tail", "eval", "exit", "fun", "=", "typeof", "string", "int", "float"
+        "min", "max", "def", "env", "list", "get", "remove", "eval", "exit", "fun", "=", "typeof", "string", "int", "float"
     };
 
     static int num_keywords = sizeof(keywords) / sizeof(keywords[0]);
@@ -772,8 +785,8 @@ void add_builtin(env *e, char *key, builtin blt)
 void add_builtins(env *e)
 {
     add_builtin(e, "list", b_list);
-    add_builtin(e, "head", b_head);
-    add_builtin(e, "tail", b_tail);
+    add_builtin(e, "get", b_get);
+    add_builtin(e, "remove", b_remove);
     add_builtin(e, "eval", b_eval);
     add_builtin(e, "+", b_add);
     add_builtin(e, "-", b_sub);
@@ -810,13 +823,13 @@ char *builtin_name(builtin f)
     {
         return "builtin_list";
     }
-    if (f == b_head)
+    if (f == b_get)
     {
-        return "builtin_head";
+        return "builtin_get";
     }
-    if (f == b_tail)
+    if (f == b_remove)
     {
-        return "builtin_tail";
+        return "builtin_remove";
     }
     if (f == b_eval)
     {

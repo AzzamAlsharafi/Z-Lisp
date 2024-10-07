@@ -3,6 +3,11 @@
 (def {true} 1)
 (def {false} 0)
 
+; Backward compatibility. (Standard library will be rewritten in the future. This is temporary.)
+(def { head } (fun {l} {list (get l 0)}))
+(def { tail } (fun {l} {remove l 0}))
+(def { join } (fun {& args} {eval (+ {+ {}} args)}))
+
 ; Function Definitions
 (def {func} (fun {f b} {
   def (head f) (fun (tail f) b)
