@@ -1,6 +1,6 @@
 // gcc -std=c99 -Wall -Werror -o zlisp main.c mpc.c types.c builtin.c parser.c -ledit -lm
 
-#define VERSION "0.0.0"
+#define VERSION "0.1.0"
 
 #include <stdio.h>
 #include <stdlib.h>
