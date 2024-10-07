@@ -7,7 +7,6 @@
   - [Data Types](#data-types)
   - [Built-in Functions](#built-in-functions)
   - [Examples](#examples)
-  - [Getting Started](#getting-started)
   
   ## Basic Syntax
   The langue syntax rules are very simple:
@@ -24,7 +23,8 @@
   
   ## Data Types
   The following primitive types exist in the language and can be stored in variables or passed as arguments:
-  * Numbers.
+  * Integer.
+  * Floats.
   * Strings.
   * Lists.
   * Functions.
@@ -36,22 +36,21 @@
 | Function | Description | Arguments |
 |---|---|---|
 | `list` | Creates a list. |  Any number of values. |
-| `head` | Returns the first element of a list. | A list. |
-| `tail` | Returns a list containing all elements except the first. | A list. |
-| `join` | Concatenates two lists. | Two lists. | 
+| `get` | Returns the ith element of a list. | A list, and an Integer. |
+| `remove` | Returns the ith element of a list and return remaining list. | A list, and an Integer. |
 | `len` | Returns the length of a list. | A list. |
-| `+` | Adds numbers together (Cumulative). |  Any number of numbers. |
-| `-` | Subtracts numbers (Cumulative). |  Any number of numbers. |
-| `*` | Multiplies numbers (Cumulative). |  Any number of numbers. |
-| `/` | Divides numbers (Cumulative). | Any number of numbers. |
-| `%` | Returns the remainder of division (Cumulative). | Any number of numbers. |
-| `^` | Raises a number to a power  (Cumulative). | Any number of numbers. |
-| `min` | Returns the minimum of a set of numbers. | Any number of numbers. |
-| `max` | Returns the maximum of a set of numbers. | Any number of numbers. |
-| `>` | Greater than comparison (Cumulative). | Any number of numbers. |
-| `<` | Less than comparison (Cumulative). | Any number of numbers. |
+| `+` | Adds numbers, Strings, or Lists together (Cumulative). In case of Strings, non-string arguments will be converted to Strings, and in case of Lists, non-List arguments will be inserted to the final List. Function operation depends on the type of the first argument. |  At least two values. |
+| `-` | Subtracts numbers (Cumulative). If provided one argument, it will be negated. |  Any number of numbers. |
+| `*` | Multiplies numbers (Cumulative). |  At least two numbers. |
+| `/` | Divides numbers (Cumulative). | At least two numbers. |
+| `%` | Returns the remainder of division (Cumulative). | At least two numbers. |
+| `^` | Raises a number to a power  (Cumulative). | At least two numbers. |
+| `>` | Greater than comparison (Cumulative). | At least two numbers. |
+| `<` | Less than comparison (Cumulative). | At least two numbers. |
+| `&&` | And operator (Cumulative). | At least two Integers. |
+| `\|\|` | Or operator (Cumulative). | At least two Integers. |
 | `==` | Equality comparison. | Two values. |
-| `!=` | Inequality comparison. | Two values. |
+| `!` | Negation operator. | An Integer. |
 | `def` | Defines variables globally. | A List of Symbols followed by values. |
 | `=` | Define variable locally. | A List of Symbols followed by values. |
 | `env` | Returns the current environment. | None ({}). |
@@ -62,6 +61,10 @@
 | `print` | Prints a value to the console. | Any value. |
 | `error` | Prints an error message to the console. | A string (error message). |
 | `exit` | Exits the program. |  None ({}). |
+| `typeof` | Return type of argument in String format. | A value. |
+| `string` | Convert value to String. | A value. |
+| `int` | Convert number to Integer, or parse String. | A number or a String. |
+| `float` | Convert number to Float, or parse String. | A number or a String. |
 
 ## Examples
 **1. Arithmetic Operations**
