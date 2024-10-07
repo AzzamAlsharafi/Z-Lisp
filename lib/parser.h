@@ -13,4 +13,8 @@ val *parse_num(mpc_ast_t *node);
 
 val *parse_str(mpc_ast_t *node);
 
+val *string_to_int(char *str);
+
+val *string_to_float(char *str);
+
 #endif

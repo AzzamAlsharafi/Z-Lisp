@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <limits.h>
 
 #include "mpc.h"
 
@@ -54,6 +55,10 @@
   ASSERT(args, v->d.exp.list[index]->type == T_INT || v->d.exp.list[index]->type == T_FLT, \
     "Function '%s' passed incorrect type for argument %i. Got %s, Expected Number.", func, index, type_name(v->d.exp.list[index]->type));
 
+// Assert type of argument is Number or String.
+#define ASSERT_NUM_STR_TYPE(func, args, index) \
+  ASSERT(args, v->d.exp.list[index]->type == T_INT || v->d.exp.list[index]->type == T_FLT || v->d.exp.list[index]->type == T_STR, \
+    "Function '%s' passed incorrect type for argument %i. Got %s, Expected Number or String.", func, index, type_name(v->d.exp.list[index]->type));
 
 extern mpc_parser_t *Parser;
 
@@ -707,17 +712,20 @@ val *b_string(env *e, val *v)
 val *b_int(env *e, val *v)
 {
     ASSERT_NUM("int", v, 1);
-    ASSERT_NUM_TYPE("int", v, 0);
+    ASSERT_NUM_STR_TYPE("int", v, 0);
 
     val *i = NULL;
 
     if (v->d.exp.list[0]->type == T_INT)
     {
-        i = v->d.exp.list[0];
+        i = exp_pop(v, 0);
     }
     else if (v->d.exp.list[0]->type == T_FLT)
     {
         i = new_int((int) v->d.exp.list[0]->d.flt);
+    } else if (v->d.exp.list[0]->type == T_STR)
+    {
+        i = string_to_int(v->d.exp.list[0]->d.str);
     }
 
     free_val(v);
@@ -729,7 +737,7 @@ val *b_int(env *e, val *v)
 val *b_float(env *e, val *v)
 {
     ASSERT_NUM("float", v, 1);
-    ASSERT_NUM_TYPE("float", v, 0);
+    ASSERT_NUM_STR_TYPE("float", v, 0);
 
     val *f = NULL;
 
@@ -739,7 +747,10 @@ val *b_float(env *e, val *v)
     }
     else if (v->d.exp.list[0]->type == T_FLT)
     {
-        f = v->d.exp.list[0];
+        f = exp_pop(v, 0);
+    } else if (v->d.exp.list[0]->type == T_STR)
+    {
+        f = string_to_float(v->d.exp.list[0]->d.str);
     }
 
     free_val(v);

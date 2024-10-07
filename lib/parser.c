@@ -1,3 +1,6 @@
+#include <limits.h>
+#include <float.h>
+
 #include "mpc.h"
 
 #include "types.h"
@@ -78,23 +81,12 @@ val *parse_num(mpc_ast_t *node)
 
     if (strstr(node->contents, "."))
     {
-        double n = strtod(node->contents, NULL);
-
-        if (errno != ERANGE)
-        {
-            return new_flt(n);
-        }
-    } else {
-        long n = strtol(node->contents, NULL, 10);
-
-        if (errno != ERANGE)
-        {
-            return new_int(n);
-        }
+        return string_to_float(node->contents);
     }
-
-    return new_err("Invalid number '%s'.", node->contents);
-
+    else
+    {
+        return string_to_int(node->contents);
+    }
 }
 
 // Parse string node and return val.
@@ -112,4 +104,54 @@ val *parse_str(mpc_ast_t *node)
     free(unescaped);
 
     return str;
+}
+
+val *string_to_int(char *str)
+{
+    errno = 0;
+    char *end = NULL;
+
+    long n = strtol(str, &end, 10);
+
+    val* v = NULL;
+
+    if (str == end) // No digits found.
+        v = new_err("Invalid Integer '%s'. No digits found.", str);
+    else if (errno == ERANGE && n == LONG_MIN) // Underflow.
+        v = new_err("Invalid Integer '%s'. Underflow.", str);
+    else if (errno == ERANGE && n == LONG_MAX) // Overflow.
+        v = new_err("Invalid Integer '%s'. Overflow.", str);
+    else if (errno != 0 && n == 0) // Unspecified error.
+        v = new_err("Invalid Integer '%s'.", str);
+    else if (errno == 0 && str && !*end) // Valid.
+        v = new_int(n);
+    else if (errno == 0 && str && *end != 0) // Valid but additional characters remains.
+        v = new_err("Invalid Integer '%s'. Additional characters found.", str);
+    
+    return v;
+}
+
+val *string_to_float(char *str)
+{
+    errno = 0;
+    char *end = NULL;
+
+    double n = strtod(str, &end);
+
+    val* v = NULL;
+
+    if (str == end) // No digits found.
+        v = new_err("Invalid Float '%s'. No digits found.", str);
+    else if (errno == ERANGE && n == DBL_MIN) // Underflow.
+        v = new_err("Invalid Float '%s'. Underflow.", str);
+    else if (errno == ERANGE && n == DBL_MAX) // Overflow.
+        v = new_err("Invalid Float '%s'. Overflow.", str);
+    else if (errno != 0 && n == 0) // Unspecified error.
+        v = new_err("Invalid Float '%s'.", str);
+    else if (errno == 0 && str && !*end) // Valid.
+        v = new_flt(n);
+    else if (errno == 0 && str && *end != 0) // Valid but additional characters remains.
+        v = new_err("Invalid Float '%s'. Additional characters found.", str);
+    
+    return v;
 }
