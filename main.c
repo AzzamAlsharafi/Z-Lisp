@@ -22,7 +22,8 @@ char *readline(char *prompt)
 }
 
 void add_history(char *unused) {}
-#else
+
+#elif !defined(__EMSCRIPTEN__)
 
 #include <editline/readline.h>
 
@@ -43,6 +44,27 @@ mpc_parser_t *List;
 mpc_parser_t *Component;
 mpc_parser_t *Comment;
 mpc_parser_t *Parser;
+
+// Define global environment
+env *e;
+
+int cleanup()
+{
+    free_env(e);
+    mpc_cleanup(8, Number, String, Symbol, Expression, List, Component, Comment, Parser);
+    return 0;
+}
+
+void execute(char *input)
+{
+    if (input[0] != '\0')
+    {
+        // Parse input, evalute, and print val result.
+        val* x = parse(input, Parser, e);
+        print_val_ln(x);
+        free_val(x);
+    }
+}
 
 int main(int argc, char **argv)
 {
@@ -70,7 +92,7 @@ int main(int argc, char **argv)
     ", Number, String, Symbol, Expression, List, Component, Comment, Parser);
 
     // Initialize global environment.
-    env *e = new_env();
+    e = new_env();
     add_builtins(e);
 
     // Load standard library.
@@ -108,24 +130,22 @@ int main(int argc, char **argv)
         puts("Z-Lisp, v: " VERSION);
         puts("Press Ctrl-C to Exit\n");
 
+#ifndef __EMSCRIPTEN__
         while (1)
         {
             char *input = readline("z-lisp> ");
 
             add_history(input);
 
-            if (input[0] != '\0')
-            {
-                // Parse input, evalute, and return val result.
-                val* x = parse(input, Parser, e);
-                print_val_ln(x);
-            }
+            execute(input);
 
             free(input);
         }
+#endif
     }
 
+#ifndef __EMSCRIPTEN__
     // Cleanup.
-    free_env(e);
-    mpc_cleanup(8, Number, String, Symbol, Expression, List, Component, Comment, Parser);
+    cleanup();
+#endif
 }

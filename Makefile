@@ -6,6 +6,12 @@ TARGET = zlisp
 SRCS = main.c lib/mpc.c lib/types.c lib/builtin.c lib/parser.c
 OBJS = $(SRCS:.c=.o)
 
+EMCC = emcc
+EMCC_FLAGS = --preload-file std.zsp --preload-file hello.zsp -std=c99 -Wall -Werror \
+			-sEXPORTED_FUNCTIONS=_main,_execute,_cleanup -sEXPORTED_RUNTIME_METHODS=cwrap -sMODULARIZE -sEXPORT_ES6=1
+EMCC_LIBS = -lm
+EMCC_TARGET = zlisp/main.js
+
 .PHONY: all debug clean
 
 all: $(TARGET)
@@ -19,5 +25,9 @@ $(TARGET): $(OBJS)
 debug: CFLAGS += $(DEBUG_FLAGS)
 debug: $(TARGET)
 
+wasm:
+	mkdir -p static/zlisp
+	$(EMCC) $(EMCC_FLAGS) -o static/$(EMCC_TARGET) $(SRCS) $(EMCC_LIBS)
+
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -rf $(OBJS) $(TARGET) static
